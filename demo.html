@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartDispatch Planner - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .btn-primary {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+        }
+        .card {
+            @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+        }
+        .progress-bar {
+            @apply w-full bg-gray-200 rounded-full h-2.5;
+        }
+        .progress-fill {
+            @apply h-2.5 rounded-full transition-all duration-300;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i data-lucide="truck" class="h-8 w-8 text-blue-600 mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-900">SmartDispatch Planner</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">Demo Version</span>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                        Create Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8">
+                <button class="flex items-center px-3 py-4 text-sm font-medium border-b-2 border-blue-500 text-blue-600">
+                    <i data-lucide="package" class="h-4 w-4 mr-2"></i>
+                    Order Intake
+                </button>
+                <button class="flex items-center px-3 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i data-lucide="truck" class="h-4 w-4 mr-2"></i>
+                    Plan Creation
+                </button>
+                <button class="flex items-center px-3 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i data-lucide="settings" class="h-4 w-4 mr-2"></i>
+                    Constraints
+                </button>
+                <button class="flex items-center px-3 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i data-lucide="bar-chart-3" class="h-4 w-4 mr-2"></i>
+                    3D View
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Order Intake & Classification</h2>
+                <p class="text-gray-600 mt-1">Select orders to create dispatch plans. 5 orders available.</p>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="card mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"></i>
+                    <input type="text" placeholder="Search orders..." class="w-full pl-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>All Routes</option>
+                    <option>DEL-MUM</option>
+                    <option>DEL-HYD</option>
+                    <option>DEL-BAN</option>
+                </select>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>All Materials</option>
+                    <option>Cuboidal</option>
+                    <option>Cylindrical</option>
+                </select>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>All Status</option>
+                    <option>Unplanned</option>
+                    <option>Planned</option>
+                </select>
+                <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                    <i data-lucide="filter" class="h-4 w-4 mr-2"></i>
+                    Select All
+                </button>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input type="checkbox" class="rounded border-gray-300 text-blue-600">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Details</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Route</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded border-gray-300 text-blue-600">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="hash" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">SO001</div>
+                                        <div class="text-sm text-gray-500">DO: DO001</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Delhi → Mumbai</div>
+                                        <div class="text-sm text-gray-500">Delhi Warehouse → Mumbai Central</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">⬜</span>
+                                    <span class="text-sm font-medium text-gray-900">Cuboidal</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">50</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">25 kg</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="user" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <span class="text-sm text-gray-900">ABC Corp</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">high</span>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded border-gray-300 text-blue-600">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="hash" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">SO002</div>
+                                        <div class="text-sm text-gray-500">DO: DO002</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Delhi → Mumbai</div>
+                                        <div class="text-sm text-gray-500">Delhi Hub → Mumbai Port</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">⚪</span>
+                                    <span class="text-sm font-medium text-gray-900">Cylindrical</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">30</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">45 kg</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="user" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <span class="text-sm text-gray-900">XYZ Ltd</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">medium</span>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded border-gray-300 text-blue-600">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="hash" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">SO003</div>
+                                        <div class="text-sm text-gray-500">DO: DO003</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="map-pin" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Delhi → Hyderabad</div>
+                                        <div class="text-sm text-gray-500">Delhi North → Hyderabad Tech City</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="text-lg mr-2">⬜</span>
+                                    <span class="text-sm font-medium text-gray-900">Cuboidal</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">75</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">15 kg</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <i data-lucide="user" class="h-4 w-4 text-gray-400 mr-2"></i>
+                                    <span class="text-sm text-gray-900">PQR Industries</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">low</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Feature Highlights -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="package" class="h-8 w-8 text-blue-600 mr-3"></i>
+                    <h3 class="text-lg font-semibold">Material Types</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Support for cuboidal and cylindrical items with specific optimization rules.</p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Cuboidal: L×W×H dimensions</li>
+                    <li>• Cylindrical: Diameter & height</li>
+                    <li>• Mixed loads supported</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="bar-chart-3" class="h-8 w-8 text-green-600 mr-3"></i>
+                    <h3 class="text-lg font-semibold">3D Visualization</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Interactive 3D truck load visualization with drag-and-drop capabilities.</p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Real-time load arrangement</li>
+                    <li>• Utilization metrics</li>
+                    <li>• Export capabilities</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="flex items-center mb-4">
+                    <i data-lucide="settings" class="h-8 w-8 text-purple-600 mr-3"></i>
+                    <h3 class="text-lg font-semibold">Smart Optimization</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Advanced algorithms for optimal load planning and route optimization.</p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Weight & volume optimization</li>
+                    <li>• Stacking rules enforcement</li>
+                    <li>• Route-based planning</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Add some basic interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle checkbox selections
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const row = this.closest('tr');
+                    if (row) {
+                        if (this.checked) {
+                            row.classList.add('bg-blue-50', 'border-l-4', 'border-blue-500');
+                        } else {
+                            row.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500');
+                        }
+                    }
+                });
+            });
+
+            // Add click handlers for navigation
+            const navButtons = document.querySelectorAll('nav button');
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active state from all buttons
+                    navButtons.forEach(btn => {
+                        btn.classList.remove('border-blue-500', 'text-blue-600');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    
+                    // Add active state to clicked button
+                    this.classList.remove('border-transparent', 'text-gray-500');
+                    this.classList.add('border-blue-500', 'text-blue-600');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
