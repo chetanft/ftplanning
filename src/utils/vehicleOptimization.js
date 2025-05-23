@@ -250,9 +250,77 @@ export const groupOrdersByRoute = (orders) => {
 };
 
 /**
+ * Analyze orders and suggest route type (SPMD or SPSD)
+ * SPMD = Single Pickup Multi-Drop
+ * SPSD = Single Pickup Single Drop
+ */
+export const suggestRouteType = (orders) => {
+  if (!orders || orders.length === 0) {
+    return {
+      suggestion: 'SPSD',
+      reason: 'No orders selected',
+      confidence: 0
+    };
+  }
+
+  // Check if all orders have the same pickup location
+  const pickupLocations = [...new Set(orders.map(order => order.pickup))];
+  const singlePickup = pickupLocations.length === 1;
+
+  // Check if orders have different drop points
+  const dropLocations = [...new Set(orders.map(order => order.delivery))];
+  const multiDrop = dropLocations.length > 1;
+
+  // Check if orders are going in the same general direction
+  const routes = [...new Set(orders.map(order => order.route))];
+  const sameDirection = routes.length === 1;
+
+  // Check if orders have similar priorities
+  const priorities = [...new Set(orders.map(order => order.priority))];
+  const similarPriority = priorities.length === 1 ||
+    (priorities.length === 2 && !priorities.includes('low') && !priorities.includes('high'));
+
+  // Calculate confidence score (0-100)
+  let confidence = 0;
+  if (singlePickup) confidence += 30;
+  if (multiDrop) confidence += 30;
+  if (sameDirection) confidence += 20;
+  if (similarPriority) confidence += 20;
+
+  // Make suggestion
+  if (singlePickup && multiDrop) {
+    return {
+      suggestion: 'SPMD',
+      reason: `Single pickup (${pickupLocations[0]}) with ${dropLocations.length} different drop points`,
+      confidence,
+      pickupLocation: pickupLocations[0],
+      dropLocations,
+      routePath: dropLocations.join(' → ')
+    };
+  } else if (singlePickup && !multiDrop) {
+    return {
+      suggestion: 'SPSD',
+      reason: `Single pickup and single drop point (${dropLocations[0]})`,
+      confidence,
+      pickupLocation: pickupLocations[0],
+      dropLocations
+    };
+  } else {
+    return {
+      suggestion: 'SPSD',
+      reason: 'Multiple pickup locations detected, recommend separate routes',
+      confidence: Math.min(confidence, 50),
+      pickupLocations,
+      dropLocations
+    };
+  }
+};
+
+/**
  * Generate drop points for orders based on delivery locations
  */
 export const generateDropPoints = (orders, maxDropPoints = 1) => {
+  // Original logic for non-multi-drop routes
   if (maxDropPoints === 1) {
     // Single drop point - group all orders by route destination
     const dropPointsByRoute = {};

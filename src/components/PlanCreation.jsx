@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Truck, Package, MapPin, Weight, BarChart3, Plus, Minus, AlertTriangle, CheckCircle, Lightbulb } from 'lucide-react';
+import { Truck, Package, MapPin, Weight, BarChart3, Plus, Minus, AlertTriangle, CheckCircle, Lightbulb, Navigation, ArrowRight } from 'lucide-react';
 import { vehicleTypes, routes } from '../data/mockData';
-import { generateVehicleSuggestions, calculateUtilization, calculateOrderTotals, groupOrdersByRoute } from '../utils/vehicleOptimization';
+import { generateVehicleSuggestions, calculateUtilization, calculateOrderTotals, groupOrdersByRoute, generateDropPoints, suggestRouteType } from '../utils/vehicleOptimization';
 
 const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
   // Auto-suggestion algorithm using utility function
@@ -34,12 +34,35 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
   // Calculate totals using utility function
   const totals = useMemo(() => calculateOrderTotals(selectedOrders), [selectedOrders]);
 
+  // Generate drop points preview based on current settings
+  const dropPointsPreview = useMemo(() => {
+    return generateDropPoints(selectedOrders, dropPoints);
+  }, [selectedOrders, dropPoints]);
+
+  // Get route type suggestion
+  const routeTypeSuggestion = useMemo(() => {
+    return suggestRouteType(selectedOrders);
+  }, [selectedOrders]);
+
   // Update vehicle selection when orders change
   useEffect(() => {
     if (autoSuggestVehicles.length > 0) {
       setSelectedVehicles(autoSuggestVehicles[0].vehicles);
     }
   }, [selectedOrders]); // Only depend on selectedOrders to avoid infinite loop
+
+  // Log state changes for debugging
+  useEffect(() => {
+    console.log('Drop points updated:', dropPoints);
+  }, [dropPoints]);
+
+  useEffect(() => {
+    console.log('Drop points preview updated:', dropPointsPreview);
+  }, [dropPointsPreview]);
+
+  useEffect(() => {
+    console.log('Selected vehicles updated:', selectedVehicles);
+  }, [selectedVehicles]);
 
   // Calculate utilization for current selection using utility function
   const currentUtilization = useMemo(() =>
@@ -100,15 +123,40 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
   };
 
   const handleGeneratePlan = () => {
+    // Validate and generate plan
+    if (selectedVehicles.length === 0) {
+      alert('Please select at least one vehicle');
+      return;
+    }
+
+    // Check if we should use the suggested route type
+    let finalDropPoints = dropPoints;
+    let finalRouteStrategy = routeStrategy;
+
+    if (routeTypeSuggestion.suggestion === 'SPMD' &&
+        routeTypeSuggestion.dropLocations &&
+        routeTypeSuggestion.dropLocations.length > 1) {
+
+      // If SPMD is suggested and user has set drop points to match the suggestion
+      if (dropPoints === routeTypeSuggestion.dropLocations.length) {
+        finalRouteStrategy = 'consolidate'; // Use consolidated route strategy for multi-drop
+        console.log('Using suggested multi-drop route with', dropPoints, 'drop points');
+      }
+    }
+
+    // Prepare plan configuration
     const planConfig = {
       vehicles: selectedVehicles,
       priorities: optimizationPriorities,
-      dropPoints,
+      dropPoints: finalDropPoints,
       materialTypes,
-      routeStrategy,
+      routeStrategy: finalRouteStrategy,
       loadingSequence,
-      allowMixedRoutes
+      allowMixedRoutes,
+      routeTypeSuggestion
     };
+
+    // Call the parent component's handler
     onGeneratePlan(planConfig);
   };
 
@@ -215,7 +263,9 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
                 <div className="text-sm text-gray-500">Orders</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">1</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {selectedVehicles.reduce((total, vehicle) => total + vehicle.quantity, 0)}
+                </div>
                 <div className="text-sm text-gray-500">Vehicles</div>
               </div>
               <div className="text-center">
@@ -223,7 +273,14 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
                 <div className="text-sm text-gray-500">Total Weight (kg)</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">₹15,000</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  ₹{selectedVehicles.reduce((total, sv) => {
+                    const vehicle = vehicleTypes.find(v => v.id === sv.type);
+                    // Estimate based on average route distance of 1500km
+                    const estimatedDistance = 1500;
+                    return total + (vehicle?.costPerKm * sv.quantity * estimatedDistance || 0);
+                  }, 0).toLocaleString()}
+                </div>
                 <div className="text-sm text-gray-500">Est. Cost</div>
               </div>
             </div>
@@ -454,13 +511,53 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
             </div>
           </div>
 
+          {/* Route Type Suggestion */}
+          {routeTypeSuggestion.suggestion === 'SPMD' && (
+            <div className="card bg-blue-50 border-blue-200">
+              <div className="flex items-start">
+                <Lightbulb className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700 mb-1">Multi-Drop Route Suggested</h3>
+                  <p className="text-sm text-blue-600 mb-2">{routeTypeSuggestion.reason}</p>
+
+                  <div className="bg-white rounded-lg p-3 border border-blue-200 mt-3">
+                    <div className="flex items-center text-sm text-blue-800 font-medium mb-2">
+                      <span>Suggested Route:</span>
+                    </div>
+                    <div className="flex items-center flex-wrap gap-2 text-sm">
+                      <span className="font-medium">{routeTypeSuggestion.pickupLocation}</span>
+                      {routeTypeSuggestion.dropLocations.map((location, index) => (
+                        <React.Fragment key={index}>
+                          <ArrowRight className="h-3 w-3 text-blue-400" />
+                          <span>{location}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-xs text-blue-600">
+                      Confidence: {routeTypeSuggestion.confidence}%
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-sm">
+                    <p>Set drop points to {routeTypeSuggestion.dropLocations.length} to use this route.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Drop Points */}
           <div className="card">
             <h3 className="text-lg font-semibold mb-4">Drop Points</h3>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => setDropPoints(Math.max(1, dropPoints - 1))}
+                onClick={() => {
+                  const newValue = Math.max(1, dropPoints - 1);
+                  console.log('Decreasing drop points to:', newValue);
+                  setDropPoints(newValue);
+                }}
                 className="btn-secondary p-2"
+                aria-label="Decrease drop points"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -469,11 +566,42 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
                 <div className="text-sm text-gray-500">Drop Points</div>
               </div>
               <button
-                onClick={() => setDropPoints(dropPoints + 1)}
+                onClick={() => {
+                  const newValue = dropPoints + 1;
+                  console.log('Increasing drop points to:', newValue);
+                  setDropPoints(newValue);
+                }}
                 className="btn-secondary p-2"
+                aria-label="Increase drop points"
               >
                 <Plus className="h-4 w-4" />
               </button>
+            </div>
+
+            {/* Drop Points Preview */}
+            <div className="mt-4">
+              <div className="text-sm font-medium text-gray-700 mb-2">
+                Drop Points Preview ({dropPointsPreview.length})
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {dropPointsPreview.map((dp, index) => (
+                  <div key={dp.id} className="p-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center">
+                      <Navigation className="h-4 w-4 text-gray-400 mr-2" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-700">{dp.location}</div>
+                        <div className="text-xs text-gray-500">
+                          {dp.orders.length} orders • {dp.route}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-2 text-xs text-gray-500">
+              Multiple drop points allow for more granular delivery planning
             </div>
           </div>
 

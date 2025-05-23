@@ -8,19 +8,19 @@ import * as XLSX from 'xlsx';
 export const parseExcelFile = async (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        
+
         // Get the first worksheet
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        
+
         // Convert to JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
+
         // Parse the data based on expected format
         const orders = parseOrderData(jsonData);
         resolve(orders);
@@ -28,11 +28,11 @@ export const parseExcelFile = async (file) => {
         reject(new Error(`Failed to parse Excel file: ${error.message}`));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Failed to read file'));
     };
-    
+
     reader.readAsArrayBuffer(file);
   });
 };
@@ -46,10 +46,10 @@ const parseOrderData = (rawData) => {
   if (rawData.length < 2) {
     throw new Error('Excel file must contain at least a header row and one data row');
   }
-  
+
   const headers = rawData[0].map(header => header?.toString().toLowerCase().trim());
   const orders = [];
-  
+
   // Define column mappings (flexible to handle different Excel formats)
   const columnMappings = {
     'so id': 'id',
@@ -79,7 +79,7 @@ const parseOrderData = (rawData) => {
     'priority': 'priority',
     'status': 'status'
   };
-  
+
   // Create mapping from Excel columns to our data structure
   const fieldMapping = {};
   headers.forEach((header, index) => {
@@ -88,12 +88,12 @@ const parseOrderData = (rawData) => {
       fieldMapping[mappedField] = index;
     }
   });
-  
+
   // Process each data row
   for (let i = 1; i < rawData.length; i++) {
     const row = rawData[i];
     if (!row || row.length === 0) continue;
-    
+
     try {
       const order = parseOrderRow(row, fieldMapping, i);
       if (order) {
@@ -103,7 +103,7 @@ const parseOrderData = (rawData) => {
       console.warn(`Skipping row ${i + 1}: ${error.message}`);
     }
   }
-  
+
   return orders;
 };
 
@@ -119,25 +119,25 @@ const parseOrderRow = (row, fieldMapping, rowIndex) => {
     const index = fieldMapping[field];
     return index !== undefined ? (row[index] || defaultValue) : defaultValue;
   };
-  
+
   const getNumericValue = (field, defaultValue = 0) => {
     const value = getValue(field);
     const parsed = parseFloat(value);
     return isNaN(parsed) ? defaultValue : parsed;
   };
-  
+
   // Required fields
   const id = getValue('id');
   const quantity = getNumericValue('quantity');
-  
+
   if (!id || quantity <= 0) {
     throw new Error(`Missing required fields (ID: ${id}, Quantity: ${quantity})`);
   }
-  
+
   // Determine material type and dimensions
   const materialType = determineMaterialType(row, fieldMapping);
   const dimensions = parseDimensions(row, fieldMapping, materialType);
-  
+
   // Build order object
   const order = {
     id: id.toString(),
@@ -154,7 +154,7 @@ const parseOrderRow = (row, fieldMapping, rowIndex) => {
     priority: parsePriority(getValue('priority')),
     status: getValue('status', 'unplanned').toLowerCase()
   };
-  
+
   // Add material-specific properties
   if (materialType === 'cuboidal') {
     order.stackable = true;
@@ -164,7 +164,7 @@ const parseOrderRow = (row, fieldMapping, rowIndex) => {
     order.nesting = getValue('nesting', 'false').toLowerCase() === 'true';
     order.fragile = getValue('fragile', 'false').toLowerCase() === 'true';
   }
-  
+
   return order;
 };
 
@@ -172,9 +172,9 @@ const parseOrderRow = (row, fieldMapping, rowIndex) => {
  * Determine material type from row data
  */
 const determineMaterialType = (row, fieldMapping) => {
-  const explicitType = fieldMapping.materialType !== undefined ? 
+  const explicitType = fieldMapping.materialType !== undefined ?
     row[fieldMapping.materialType]?.toString().toLowerCase() : null;
-  
+
   if (explicitType) {
     if (explicitType.includes('cylindrical') || explicitType.includes('cylinder')) {
       return 'cylindrical';
@@ -183,19 +183,19 @@ const determineMaterialType = (row, fieldMapping) => {
       return 'cuboidal';
     }
   }
-  
+
   // Infer from dimensions
   const hasDiameter = fieldMapping.diameter !== undefined && row[fieldMapping.diameter];
   const hasLength = fieldMapping.length !== undefined && row[fieldMapping.length];
   const hasWidth = fieldMapping.width !== undefined && row[fieldMapping.width];
-  
+
   if (hasDiameter) {
     return 'cylindrical';
   }
   if (hasLength && hasWidth) {
     return 'cuboidal';
   }
-  
+
   // Default to cuboidal
   return 'cuboidal';
 };
@@ -210,7 +210,7 @@ const parseDimensions = (row, fieldMapping, materialType) => {
     const parsed = parseFloat(value);
     return isNaN(parsed) ? defaultValue : parsed;
   };
-  
+
   if (materialType === 'cylindrical') {
     return {
       diameter: getValue('diameter', 500),
@@ -230,9 +230,9 @@ const parseDimensions = (row, fieldMapping, materialType) => {
  */
 const parseRoute = (routeValue) => {
   if (!routeValue) return 'DEL-MUM';
-  
+
   const route = routeValue.toString().toUpperCase().trim();
-  
+
   // Common route mappings
   const routeMappings = {
     'DELHI-MUMBAI': 'DEL-MUM',
@@ -244,7 +244,7 @@ const parseRoute = (routeValue) => {
     'DEL-CHENNAI': 'DEL-CHE',
     'DEL-BANGALORE': 'DEL-BAN'
   };
-  
+
   return routeMappings[route] || route;
 };
 
@@ -258,7 +258,7 @@ const getRouteName = (routeCode) => {
     'DEL-CHE': 'Delhi → Chennai',
     'DEL-BAN': 'Delhi → Bangalore'
   };
-  
+
   return routeNames[routeCode] || routeCode;
 };
 
@@ -267,16 +267,16 @@ const getRouteName = (routeCode) => {
  */
 const parsePriority = (priorityValue) => {
   if (!priorityValue) return 'medium';
-  
+
   const priority = priorityValue.toString().toLowerCase().trim();
-  
+
   if (priority.includes('high') || priority.includes('urgent') || priority === '1') {
     return 'high';
   }
   if (priority.includes('low') || priority === '3') {
     return 'low';
   }
-  
+
   return 'medium';
 };
 
@@ -310,9 +310,9 @@ export const exportToExcel = (orders, filename = 'dispatch_plan.xlsx') => {
       'Nesting': order.nesting ? 'Yes' : 'No'
     })
   })));
-  
+
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
-  
+
   XLSX.writeFile(workbook, filename);
 };
