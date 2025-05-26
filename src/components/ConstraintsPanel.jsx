@@ -196,16 +196,7 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center">
-        <Settings className="h-6 w-6 text-gray-400 mr-3" />
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Constraints & Optimization Setup</h2>
-          <p className="text-gray-600 mt-1">
-            Configure loading constraints and optimization parameters
-          </p>
-        </div>
-      </div>
+      {/* We removed the header since it's now in the modal */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Physical Constraints */}
@@ -227,7 +218,7 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
                       <input
                         type={item.type}
                         value={item.value}
-                        onChange={(e) => handleConstraintChange(item.key, 
+                        onChange={(e) => handleConstraintChange(item.key,
                           item.type === 'number' ? Number(e.target.value) : e.target.value
                         )}
                         className="input-field"

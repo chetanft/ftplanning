@@ -6,6 +6,7 @@ import PlanCreation from './components/PlanCreation';
 import ConstraintsPanel from './components/ConstraintsPanel';
 import TruckVisualization from './components/TruckVisualization';
 import RouteVisualization from './components/RouteVisualization';
+import CreatePlanPage from './components/CreatePlanPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { sampleOrders, vehicleTypes, routes } from './data/mockData';
 import { distributeOrdersAcrossVehicles, calculateOrderTotals } from './utils/vehicleOptimization';
@@ -18,6 +19,7 @@ function App() {
   const [materialTypeModalOpen, setMaterialTypeModalOpen] = useState(false);
   const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
   const [planData, setPlanData] = useState(null);
+  const [constraintsModalOpen, setConstraintsModalOpen] = useState(false);
   const [constraints, setConstraints] = useState({
     priorities: ['all'],
     dropPoints: 1,
@@ -51,15 +53,20 @@ function App() {
       autoSelectedTypes = ['cylindrical'];
     }
 
-    // Set the auto-selected types before opening modal
-    setSelectedMaterialTypes(autoSelectedTypes);
-    setMaterialTypeModalOpen(true);
+    if (autoSelectedTypes.length > 0) {
+      setSelectedMaterialTypes(autoSelectedTypes);
+      setCurrentView('createplan');
+    } else {
+      // Set the auto-selected types before opening modal
+      setSelectedMaterialTypes(autoSelectedTypes);
+      setMaterialTypeModalOpen(true);
+    }
   };
 
   const handleMaterialTypeSelection = (types) => {
     setSelectedMaterialTypes(types);
     setMaterialTypeModalOpen(false);
-    setCurrentView('planning');
+    setCurrentView('createplan');
   };
 
   const handleGeneratePlan = async (planConfig) => {
@@ -116,15 +123,11 @@ function App() {
     };
 
     setPlanData(generatedPlan);
-    setCurrentView('visualization');
   };
 
   const navigation = [
     { id: 'orders', label: 'Order Intake', icon: Package },
-    { id: 'planning', label: 'Plan Creation', icon: Truck },
-    { id: 'constraints', label: 'Constraints', icon: Settings },
-    { id: 'visualization', label: '3D View', icon: BarChart3 },
-    { id: 'routes', label: 'Route Map', icon: Map },
+    { id: 'createplan', label: 'Create Plan', icon: Truck },
     { id: 'reports', label: 'Reports', icon: FileText }
   ];
 
@@ -141,6 +144,13 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setConstraintsModalOpen(true)}
+                className="flex items-center text-gray-500 hover:text-gray-700"
+                title="Constraints & Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
               <span className="text-sm text-gray-500">
                 {selectedOrders.length} orders selected
               </span>
@@ -217,11 +227,30 @@ function App() {
           )
         )}
 
-        {currentView === 'constraints' && (
-          <ConstraintsPanel
-            constraints={constraints}
-            onConstraintsChange={setConstraints}
-          />
+        {currentView === 'createplan' && (
+          selectedOrders.length > 0 ? (
+            <CreatePlanPage
+              selectedOrders={selectedOrders}
+              materialTypes={selectedMaterialTypes}
+              onGeneratePlan={handleGeneratePlan}
+              planData={planData}
+              googleMapsApiKey={googleMapsApiKey}
+            />
+          ) : (
+            <div className="card text-center py-12">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Selected</h3>
+              <p className="text-gray-600 mb-4">
+                Please go to Order Intake and select some orders to create a plan.
+              </p>
+              <button
+                onClick={() => setCurrentView('orders')}
+                className="btn-primary"
+              >
+                Go to Order Intake
+              </button>
+            </div>
+          )
         )}
 
         {currentView === 'visualization' && (
@@ -294,6 +323,39 @@ function App() {
         onSelect={handleMaterialTypeSelection}
         preSelectedTypes={selectedMaterialTypes}
       />
+
+      {/* Constraints Modal */}
+      {constraintsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Constraints & Settings</h2>
+                <button
+                  onClick={() => setConstraintsModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <ConstraintsPanel
+                constraints={constraints}
+                onConstraintsChange={setConstraints}
+              />
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setConstraintsModalOpen(false)}
+                  className="btn-primary"
+                >
+                  Save & Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

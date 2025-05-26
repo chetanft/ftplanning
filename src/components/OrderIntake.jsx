@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Package, MapPin, User, Hash } from 'lucide-react';
+import Pagination from './Pagination';
 
 const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [routeFilter, setRouteFilter] = useState('all');
   const [materialFilter, setMaterialFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Get unique routes and material types for filters
   const routes = useMemo(() => {
@@ -21,12 +24,12 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
   // Filter orders based on search and filters
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesSearch = 
+      const matchesSearch =
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.doId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.seller.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.pickup.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesRoute = routeFilter === 'all' || order.route === routeFilter;
       const matchesMaterial = materialFilter === 'all' || order.materialType === materialFilter;
       const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
@@ -34,6 +37,21 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
       return matchesSearch && matchesRoute && matchesMaterial && matchesStatus;
     });
   }, [orders, searchTerm, routeFilter, materialFilter, statusFilter]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, routeFilter, materialFilter, statusFilter]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  // Get current page orders
+  const currentOrders = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredOrders.slice(startIndex, endIndex);
+  }, [filteredOrders, currentPage, itemsPerPage]);
 
   const handleOrderToggle = (order) => {
     const isSelected = selectedOrders.some(selected => selected.id === order.id);
@@ -50,6 +68,15 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
     } else {
       onOrderSelection(filteredOrders);
     }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const getPriorityColor = (priority) => {
@@ -155,7 +182,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
                 <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                    checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                     onChange={handleSelectAll}
                     className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
@@ -171,7 +198,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => {
+              {currentOrders.map((order) => {
                 const isSelected = selectedOrders.some(selected => selected.id === order.id);
                 return (
                   <tr
@@ -239,7 +266,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
             </tbody>
           </table>
         </div>
-        
+
         {filteredOrders.length === 0 && (
           <div className="text-center py-12">
             <Package className="mx-auto h-12 w-12 text-gray-400" />
@@ -248,6 +275,18 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection }) => {
               Try adjusting your search criteria or filters.
             </p>
           </div>
+        )}
+
+        {/* Pagination */}
+        {filteredOrders.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredOrders.length}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
         )}
       </div>
     </div>
