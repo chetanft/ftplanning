@@ -39,45 +39,26 @@ export const routes = [
   }
 ];
 
+// Single vehicle type configuration - Eicher 14ft
+// This is the standard medium-duty truck used for most deliveries
 export const vehicleTypes = [
-  {
-    id: 'SXL',
-    name: 'SXL Container',
-    maxWeight: 25000, // kg - 25 tons
-    dimensions: {
-      length: 6100, // mm
-      width: 2440, // mm
-      height: 2590 // mm
-    },
-    volume: 38.5, // cubic meters (calculated: 6.1 × 2.44 × 2.59 ≈ 38.5m³)
-    costPerKm: 25
-  },
-  {
-    id: 'TATA_ACE',
-    name: 'Tata Ace',
-    maxWeight: 750, // kg - 750kg payload
-    dimensions: {
-      length: 2050, // mm
-      width: 1500, // mm
-      height: 1500 // mm
-    },
-    volume: 4.6, // cubic meters (calculated: 2.05 × 1.5 × 1.5 ≈ 4.6m³)
-    costPerKm: 12
-  },
   {
     id: 'EICHER_14FT',
     name: 'Eicher 14ft',
-    maxWeight: 4500, // kg - 4.5 tons
+    maxWeight: 4500, // kg - 4.5 tons payload capacity
     dimensions: {
-      length: 4270, // mm
-      width: 1830, // mm
-      height: 2130 // mm
+      length: 4270, // mm - 14 feet (4267mm actual)
+      width: 1830, // mm - 6 feet (1829mm actual)
+      height: 2130 // mm - 7 feet (2134mm actual)
     },
     volume: 16.6, // cubic meters (calculated: 4.27 × 1.83 × 2.13 ≈ 16.6m³)
-    costPerKm: 18
+    costPerKm: 18 // INR per kilometer
   }
 ];
 
+// Sample orders with realistic dimensions and weights
+// All values are validated to fit within Eicher 14ft capacity (4500kg, 16.6m³)
+// when properly distributed across multiple vehicles
 export const sampleOrders = [
   {
     id: 'SO001',
@@ -88,6 +69,7 @@ export const sampleOrders = [
     seller: 'ABC Corp',
     pickup: 'Delhi Warehouse',
     delivery: 'Mumbai Central',
+    dropSequence: 1, // First drop - should be loaded LAST (FILO)
     materialType: 'cuboidal',
     dimensions: {
       length: 600, // mm - Standard carton size
@@ -109,6 +91,7 @@ export const sampleOrders = [
     seller: 'XYZ Ltd',
     pickup: 'Delhi Hub',
     delivery: 'Mumbai Port',
+    dropSequence: 2, // Second drop - should be loaded before first drop
     materialType: 'cylindrical',
     dimensions: {
       diameter: 300, // mm - Smaller diameter for realistic volume
@@ -130,6 +113,7 @@ export const sampleOrders = [
     seller: 'PQR Industries',
     pickup: 'Delhi North',
     delivery: 'Hyderabad Tech City',
+    dropSequence: 1, // First drop on this route
     materialType: 'cuboidal',
     dimensions: {
       length: 400, // mm - Small electronics boxes

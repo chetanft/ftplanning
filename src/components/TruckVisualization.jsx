@@ -3,11 +3,12 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box, Cylinder, Text } from '@react-three/drei';
 import { RotateCcw, Download, Eye, EyeOff, Move, BarChart3, AlertTriangle } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
+import LoadingSequencePanel from './LoadingSequencePanel';
 
 
 
-// 3D Item Component
-const Item3D = ({ item, position, onClick, isSelected }) => {
+// 3D Item Component with Loading Order Label
+const Item3D = ({ item, position, onClick, isSelected, showLabels }) => {
   const meshRef = useRef();
 
   useFrame((state) => {
@@ -16,43 +17,83 @@ const Item3D = ({ item, position, onClick, isSelected }) => {
     }
   });
 
-  const getItemColor = (materialType, priority) => {
+  const getItemColor = (materialType, priority, loadingOrder) => {
+    // Color based on loading order for FILO visualization
+    if (loadingOrder) {
+      if (loadingOrder === 1) return '#3B82F6'; // Blue - Load first (at back)
+      if (item.loadingPosition === 'LAST') return '#10B981'; // Green - Load last (near door)
+    }
+
+    // Fallback to priority-based colors
     if (materialType === 'cylindrical') {
       return priority === 'high' ? '#EF4444' : priority === 'medium' ? '#F59E0B' : '#10B981';
     }
     return priority === 'high' ? '#DC2626' : priority === 'medium' ? '#D97706' : '#059669';
   };
 
+  const loadingOrder = item.loadingOrder;
+  const labelPosition = [position[0], position[1] + (item.dimensions.height/1000)/2 + 0.3, position[2]];
+
   if (item.materialType === 'cylindrical') {
     return (
-      <Cylinder
-        ref={meshRef}
-        args={[item.dimensions.diameter/2000, item.dimensions.diameter/2000, item.dimensions.height/1000]}
-        position={position}
-        onClick={onClick}
-      >
-        <meshStandardMaterial
-          color={getItemColor(item.materialType, item.priority)}
-          opacity={isSelected ? 0.8 : 0.7}
-          transparent
-        />
-      </Cylinder>
+      <group>
+        <Cylinder
+          ref={meshRef}
+          args={[item.dimensions.diameter/2000, item.dimensions.diameter/2000, item.dimensions.height/1000]}
+          position={position}
+          onClick={onClick}
+        >
+          <meshStandardMaterial
+            color={getItemColor(item.materialType, item.priority, loadingOrder)}
+            opacity={isSelected ? 0.8 : 0.7}
+            transparent
+          />
+        </Cylinder>
+        {showLabels && loadingOrder && (
+          <Text
+            position={labelPosition}
+            fontSize={0.3}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="black"
+          >
+            {loadingOrder}
+          </Text>
+        )}
+      </group>
     );
   }
 
   return (
-    <Box
-      ref={meshRef}
-      args={[item.dimensions.length/1000, item.dimensions.height/1000, item.dimensions.width/1000]}
-      position={position}
-      onClick={onClick}
-    >
-      <meshStandardMaterial
-        color={getItemColor(item.materialType, item.priority)}
-        opacity={isSelected ? 0.8 : 0.7}
-        transparent
-      />
-    </Box>
+    <group>
+      <Box
+        ref={meshRef}
+        args={[item.dimensions.length/1000, item.dimensions.height/1000, item.dimensions.width/1000]}
+        position={position}
+        onClick={onClick}
+      >
+        <meshStandardMaterial
+          color={getItemColor(item.materialType, item.priority, loadingOrder)}
+          opacity={isSelected ? 0.8 : 0.7}
+          transparent
+        />
+      </Box>
+      {showLabels && loadingOrder && (
+        <Text
+          position={labelPosition}
+          fontSize={0.3}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="black"
+        >
+          {loadingOrder}
+        </Text>
+      )}
+    </group>
   );
 };
 
@@ -312,6 +353,7 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
           position={item.position}
           onClick={() => onItemSelect(item)}
           isSelected={selectedItem?.id === item.id}
+          showLabels={showLabels}
         />
       ))}
 
@@ -425,6 +467,22 @@ const TruckVisualization = ({ planData }) => {
 
   const utilization = calculateUtilization();
 
+  // Helper function to get utilization color based on percentage
+  const getUtilizationColor = (percentage) => {
+    if (percentage >= 100) return 'bg-red-500';
+    if (percentage >= 95) return 'bg-red-400';
+    if (percentage >= 80) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  // Helper function to get utilization status
+  const getUtilizationStatus = (percentage) => {
+    if (percentage >= 100) return { text: 'At Capacity', color: 'text-red-600' };
+    if (percentage >= 95) return { text: 'Near Capacity', color: 'text-red-500' };
+    if (percentage >= 80) return { text: 'Good', color: 'text-yellow-600' };
+    return { text: 'Optimal', color: 'text-green-600' };
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -461,11 +519,19 @@ const TruckVisualization = ({ planData }) => {
 
           <button
             onClick={() => setShowLabels(!showLabels)}
-            className="btn-secondary flex items-center opacity-50 cursor-not-allowed"
-            disabled
+            className="btn-secondary flex items-center"
           >
-            <EyeOff className="h-4 w-4 mr-2" />
-            Labels (Disabled)
+            {showLabels ? (
+              <>
+                <Eye className="h-4 w-4 mr-2" />
+                Hide Loading Order
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-4 w-4 mr-2" />
+                Show Loading Order
+              </>
+            )}
           </button>
           <button onClick={resetView} className="btn-secondary flex items-center">
             <RotateCcw className="h-4 w-4 mr-2" />
@@ -563,28 +629,62 @@ const TruckVisualization = ({ planData }) => {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span>Volume Utilization</span>
-                  <span className="font-medium">{utilization.volume.toFixed(1)}%</span>
+                  <span className={`font-medium ${getUtilizationStatus(utilization.volume).color}`}>
+                    {utilization.volume.toFixed(1)}%
+                  </span>
                 </div>
                 <div className="progress-bar">
                   <div
-                    className="progress-fill bg-blue-500"
+                    className={`progress-fill ${getUtilizationColor(utilization.volume)}`}
                     style={{ width: `${Math.min(utilization.volume, 100)}%` }}
                   ></div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {getUtilizationStatus(utilization.volume).text}
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span>Weight Utilization</span>
-                  <span className="font-medium">{utilization.weight.toFixed(1)}%</span>
+                  <span className={`font-medium ${getUtilizationStatus(utilization.weight).color}`}>
+                    {utilization.weight.toFixed(1)}%
+                  </span>
                 </div>
                 <div className="progress-bar">
                   <div
-                    className="progress-fill bg-green-500"
+                    className={`progress-fill ${getUtilizationColor(utilization.weight)}`}
                     style={{ width: `${Math.min(utilization.weight, 100)}%` }}
                   ></div>
                 </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {getUtilizationStatus(utilization.weight).text}
+                </div>
               </div>
+
+              {/* Capacity Warning */}
+              {(utilization.weight >= 100 || utilization.volume >= 100) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center text-sm text-red-700">
+                    <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium">At Maximum Capacity</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Near Capacity Warning */}
+              {(utilization.weight >= 95 && utilization.weight < 100) || (utilization.volume >= 95 && utilization.volume < 100) ? (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center text-sm text-yellow-700">
+                    <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-medium">Near Maximum Capacity</span>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="pt-3 border-t border-gray-200 space-y-2 text-sm">
                 {selectedVehicleId === 'all' ? (
@@ -698,6 +798,23 @@ const TruckVisualization = ({ planData }) => {
               </div>
             </div>
           )}
+
+          {/* Loading Sequence Panel */}
+          <LoadingSequencePanel
+            planData={(() => {
+              if (selectedVehicleId === 'all') {
+                // Show all items from all vehicles
+                const allItems = planData.vehicles?.flatMap(v => v.orders || []) || [];
+                return { items: allItems };
+              } else {
+                // Show items from selected vehicle
+                const selectedVehicle = planData.vehicles?.find(v => v.id === selectedVehicleId);
+                return { items: selectedVehicle?.orders || [] };
+              }
+            })()}
+            selectedItem={selectedItem}
+            onItemSelect={setSelectedItem}
+          />
 
           {/* Legend */}
           <div className="card">

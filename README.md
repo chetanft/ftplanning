@@ -17,10 +17,8 @@ A web-based prototype for dispatch planning tool that supports cuboidal and cyli
 - **Cylindrical Items**: Drums, rolls, pipes with diameter and height
 - **Mixed Loads**: Combination of both types with optimized arrangement
 
-### 🚛 Vehicle Types
-- SXL Container (25T, 38.5m³)
-- Tata Ace (750kg, 4.6m³)
-- Eicher 14ft (4.5T, 16.6m³)
+### 🚛 Vehicle Type
+- **Eicher 14ft**: 4.5T payload capacity, 16.6m³ volume (4.27m × 1.83m × 2.13m)
 
 ### 🗺️ Supported Routes
 - Delhi → Mumbai (via Jaipur)
@@ -161,16 +159,6 @@ npm run lint
 ```bash
 npm run preview
 ```
-
-## Future Enhancements
-
-- Real-time GPS tracking integration
-- Advanced route optimization with external APIs
-- Multi-language support
-- Mobile app companion
-- API integrations with ERP/WMS systems
-- Advanced reporting and analytics
-- Machine learning-based optimization
 
 ## License
 

@@ -178,6 +178,14 @@ export class LoadOptimizer {
         loadPlan.items = this.arrangeByWeight(loadPlan.items);
         break;
     }
+
+    // Assign loading order numbers after sorting
+    loadPlan.items.forEach((item, index) => {
+      item.loadingOrder = index + 1;
+      item.loadingPosition = index === 0 ? 'FIRST' :
+                            index === loadPlan.items.length - 1 ? 'LAST' :
+                            'MIDDLE';
+    });
   }
 
   // LIFO arrangement
@@ -215,10 +223,20 @@ export class LoadOptimizer {
     return items.sort((a, b) => (b.weight * b.quantity) - (a.weight * a.quantity));
   }
 
-  // Get delivery order (simplified)
+  // Get delivery order for FILO sequencing
   getDeliveryOrder(item) {
-    // This would be based on actual route optimization
-    // For now, use a simple hash of the delivery location
+    // Use dropSequence if available (1 = first drop, 2 = second drop, etc.)
+    if (item.dropSequence !== undefined && item.dropSequence !== null) {
+      return item.dropSequence;
+    }
+
+    // Use priority as fallback (high priority delivered first)
+    if (item.priority) {
+      const priorityMap = { 'high': 1, 'medium': 2, 'low': 3 };
+      return priorityMap[item.priority] || 2;
+    }
+
+    // Final fallback: use hash of delivery location
     return item.delivery ? item.delivery.length : 0;
   }
 
@@ -364,13 +382,24 @@ export class LoadOptimizer {
     return warnings;
   }
 
-  // Calculate utilization metrics
+  // Calculate utilization metrics (capped at 100%)
   calculateUtilization(items) {
     const totals = this.calculateTotals(items);
-    
+
+    const weightUtilization = (totals.weight / this.vehicle.maxWeight) * 100;
+    const volumeUtilization = (totals.volume / this.vehicle.volume) * 100;
+
+    // Cap at 100% for display purposes
+    const cappedWeight = Math.min(weightUtilization, 100);
+    const cappedVolume = Math.min(volumeUtilization, 100);
+
     return {
-      weight: (totals.weight / this.vehicle.maxWeight) * 100,
-      volume: (totals.volume / this.vehicle.volume) * 100
+      weight: cappedWeight,
+      volume: cappedVolume,
+      actualWeight: weightUtilization, // Keep actual value for validation
+      actualVolume: volumeUtilization, // Keep actual value for validation
+      isOverCapacity: weightUtilization > 100 || volumeUtilization > 100,
+      isNearCapacity: weightUtilization > 95 || volumeUtilization > 95
     };
   }
 }

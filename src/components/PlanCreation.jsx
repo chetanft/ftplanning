@@ -10,12 +10,12 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
     [selectedOrders]
   );
 
-  // Initialize with best auto-suggestion or fallback to SXL
+  // Initialize with Eicher 14ft (only vehicle type available)
   const getInitialVehicleSelection = () => {
     if (autoSuggestVehicles.length > 0) {
       return autoSuggestVehicles[0].vehicles;
     }
-    return [{ type: 'SXL', quantity: 1 }];
+    return [{ type: 'EICHER_14FT', quantity: 1 }];
   };
 
   const [selectedVehicles, setSelectedVehicles] = useState(getInitialVehicleSelection());
@@ -103,15 +103,9 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
       } else {
         updated.splice(existingIndex, 1);
       }
-      // Ensure at least one vehicle is selected
+      // Ensure at least one vehicle is selected (Eicher 14ft)
       if (updated.length === 0) {
-        // Use best auto-suggestion or fallback to most efficient vehicle
-        if (autoSuggestVehicles.length > 0) {
-          updated.push(...autoSuggestVehicles[0].vehicles);
-        } else {
-          // Fallback to smallest vehicle (Tata Ace) instead of SXL
-          updated.push({ type: 'TATA_ACE', quantity: 1 });
-        }
+        updated.push({ type: 'EICHER_14FT', quantity: 1 });
       }
       setSelectedVehicles(updated);
     }
@@ -370,123 +364,85 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
 
         {/* Right Column - Configuration */}
         <div className="space-y-6">
-          {/* Vehicle Selection */}
+          {/* Vehicle Selection - Eicher 14ft Only */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Vehicle Selection</h3>
-            <div className="space-y-3">
-              {vehicleTypes.map(vehicle => {
-                const selectedVehicle = selectedVehicles.find(sv => sv.type === vehicle.id);
-                const isSelected = !!selectedVehicle;
-                const quantity = selectedVehicle?.quantity || 0;
+            <h3 className="text-lg font-semibold mb-4">Vehicle Configuration</h3>
+            {(() => {
+              const vehicle = vehicleTypes[0]; // Only Eicher 14ft available
+              const selectedVehicle = selectedVehicles.find(sv => sv.type === vehicle.id);
+              const quantity = selectedVehicle?.quantity || 1;
 
-                return (
-                  <div
-                    key={vehicle.id}
-                    className={`p-4 border rounded-lg transition-colors ${
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <Truck className="h-5 w-5 text-gray-400 mr-2" />
-                          <div className="font-medium text-gray-900">{vehicle.name}</div>
+              return (
+                <div className="p-4 border border-primary-500 bg-primary-50 rounded-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <Truck className="h-5 w-5 text-primary-600 mr-2" />
+                        <div className="font-medium text-gray-900">{vehicle.name}</div>
+                      </div>
+
+                      {/* Vehicle specifications */}
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                        <div className="flex items-center">
+                          <Weight className="h-3 w-3 mr-1" />
+                          Max Weight: {vehicle.maxWeight/1000}T
                         </div>
+                        <div className="flex items-center">
+                          <Package className="h-3 w-3 mr-1" />
+                          Volume: {vehicle.volume}m³
+                        </div>
+                        <div>
+                          L×W×H: {(vehicle.dimensions.length/1000).toFixed(2)}×{(vehicle.dimensions.width/1000).toFixed(2)}×{(vehicle.dimensions.height/1000).toFixed(2)}m
+                        </div>
+                        <div>
+                          Cost: ₹{vehicle.costPerKm}/km
+                        </div>
+                      </div>
 
-                        {/* Enhanced vehicle specifications */}
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
-                          <div className="flex items-center">
-                            <Weight className="h-3 w-3 mr-1" />
-                            Max Weight: {vehicle.maxWeight/1000}T
-                          </div>
-                          <div className="flex items-center">
-                            <Package className="h-3 w-3 mr-1" />
-                            Volume: {vehicle.volume}m³
+                      {/* Per vehicle utilization */}
+                      <div className="mt-2 p-2 bg-white rounded border">
+                        <div className="text-xs text-gray-600 mb-1">
+                          Per Vehicle Utilization:
+                        </div>
+                        <div className="flex space-x-4 text-xs">
+                          <div>
+                            Weight: {((totals.totalWeight / (vehicle.maxWeight * quantity)) * 100).toFixed(1)}%
                           </div>
                           <div>
-                            L×W×H: {vehicle.dimensions.length/1000}×{vehicle.dimensions.width/1000}×{vehicle.dimensions.height/1000}m
-                          </div>
-                          <div>
-                            Cost: ₹{vehicle.costPerKm}/km
+                            Volume: {((totals.totalVolume / (vehicle.volume * quantity)) * 100).toFixed(1)}%
                           </div>
                         </div>
-
-                        {/* Utilization for this vehicle type */}
-                        {isSelected && (
-                          <div className="mt-2 p-2 bg-white rounded border">
-                            <div className="text-xs text-gray-600 mb-1">
-                              Per Vehicle Utilization ({quantity}x selected):
-                            </div>
-                            <div className="flex space-x-4 text-xs">
-                              <div>
-                                Weight: {((totals.totalWeight / (vehicle.maxWeight * quantity)) * 100).toFixed(1)}%
-                              </div>
-                              <div>
-                                Volume: {((totals.totalVolume / (vehicle.volume * quantity)) * 100).toFixed(1)}%
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Vehicle quantity controls */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        {isSelected ? `${quantity} selected` : 'Not selected'}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleVehicleRemove(vehicle.id)}
-                          disabled={!isSelected}
-                          className="btn-secondary p-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="text-sm font-medium w-8 text-center">
-                          {quantity}
-                        </span>
-                        <button
-                          onClick={() => handleVehicleAdd(vehicle.id)}
-                          className="btn-secondary p-1"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Selected vehicles summary */}
-            {selectedVehicles.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm font-medium text-gray-900 mb-2">Selected Fleet:</div>
-                <div className="space-y-1">
-                  {selectedVehicles.map((sv, index) => {
-                    const vehicle = vehicleTypes.find(v => v.id === sv.type);
-                    return (
-                      <div key={index} className="flex justify-between text-xs text-gray-600">
-                        <span>{sv.quantity}x {vehicle?.name}</span>
-                        <span>₹{(vehicle?.costPerKm * sv.quantity)}/km</span>
-                      </div>
-                    );
-                  })}
-                  <div className="border-t pt-1 mt-1">
-                    <div className="flex justify-between text-sm font-medium text-gray-900">
-                      <span>Total Cost:</span>
-                      <span>₹{selectedVehicles.reduce((sum, sv) => {
-                        const vehicle = vehicleTypes.find(v => v.id === sv.type);
-                        return sum + (vehicle?.costPerKm * sv.quantity);
-                      }, 0)}/km</span>
+                  {/* Vehicle quantity controls */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary-200">
+                    <div className="text-sm font-medium text-gray-900">
+                      Number of Vehicles:
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => handleVehicleRemove(vehicle.id)}
+                        disabled={quantity <= 1}
+                        className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="text-lg font-bold w-12 text-center">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => handleVehicleAdd(vehicle.id)}
+                        className="btn-secondary p-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Optimization Priorities */}
