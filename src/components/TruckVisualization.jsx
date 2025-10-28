@@ -758,7 +758,7 @@ const TruckVisualization = ({ planData }) => {
 
                 <div className="flex justify-between">
                   <span className="text-gray-600">Route Strategy:</span>
-                  <span className="font-medium capitalize">{planData.routeStrategy || 'separate'}</span>
+                  <span className="font-medium">{planData.routeStrategy === 'consolidate' ? 'Consolidated Routes' : 'Separate Routes'}</span>
                 </div>
               </div>
             </div>

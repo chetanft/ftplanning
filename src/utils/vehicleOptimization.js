@@ -564,25 +564,17 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
       }
     });
   } else {
-    // Strategy 2: Consolidate orders across routes (original behavior)
+    // Strategy 2: Consolidate orders across routes - use single vehicle pool
     const vehicleInstances = [];
     vehicleConfig.forEach(vc => {
       const vehicleType = vehicleTypes.find(vt => vt.id === vc.type);
       vehicleInstances.push(...createVehicleInstances(vc.quantity, vehicleType));
     });
 
-    if (allowMixedRoutes) {
-      // Allow orders from different routes in the same vehicle
-      const distributedVehicles = distributeOrdersForRoute(orders, vehicleInstances, loadingSequence);
-      allVehicleInstances.push(...distributedVehicles);
-    } else {
-      // Group by route but use shared vehicle pool
-      const ordersByRoute = groupOrdersByRoute(orders);
-      Object.entries(ordersByRoute).forEach(([route, routeOrders]) => {
-        const distributedVehicles = distributeOrdersForRoute(routeOrders, vehicleInstances, loadingSequence);
-        allVehicleInstances.push(...distributedVehicles);
-      });
-    }
+    // Always consolidate into the same vehicle pool
+    // allowMixedRoutes controls whether orders from different routes can be mixed or loaded sequentially
+    const distributedVehicles = distributeOrdersForRoute(orders, vehicleInstances, loadingSequence);
+    allVehicleInstances.push(...distributedVehicles);
   }
 
   // Assign drop points to vehicles based on their orders
