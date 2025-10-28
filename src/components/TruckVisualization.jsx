@@ -746,15 +746,16 @@ const TruckVisualization = ({ planData }) => {
                                 : selectedVehicle.route || 'Unknown'}
                             </span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Drop Points:</span>
+                            <span className="font-medium">{selectedVehicle?.dropPoints?.length || 0}</span>
+                          </div>
                         </>
                       ) : null;
                     })()}
                   </>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Drop Points:</span>
-                  <span className="font-medium">{selectedVehicle?.dropPoints?.length || 0}</span>
-                </div>
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Route Strategy:</span>
                   <span className="font-medium capitalize">{planData.routeStrategy || 'separate'}</span>
