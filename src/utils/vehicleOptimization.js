@@ -471,7 +471,22 @@ export const distributeOrdersForRoute = (routeOrders, availableVehicles, loading
       bestVehicle.orders.push(order);
       bestVehicle.currentWeight += orderWeight;
       bestVehicle.currentVolume += orderVolume;
-      bestVehicle.route = order.route; // Assign route to vehicle
+
+      // Track all unique routes in this vehicle
+      if (!bestVehicle.routes) {
+        bestVehicle.routes = new Set();
+      }
+      bestVehicle.routes.add(order.route);
+
+      // Update route property for backward compatibility
+      if (bestVehicle.routes.size === 1) {
+        // Single route - use the route code
+        bestVehicle.route = order.route;
+      } else {
+        // Multiple routes - mark as MIXED
+        bestVehicle.route = 'MIXED';
+        bestVehicle.routeList = Array.from(bestVehicle.routes).sort();
+      }
     }
   });
 
@@ -509,6 +524,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
         currentVolume: 0,
         orders: [],
         route: null,
+        routes: new Set(), // Track all unique routes in this vehicle
+        routeList: [], // Array of routes for easy access
         dropPoints: []
       });
       vehicleCounter++;
@@ -584,6 +601,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
     type: vehicle.type,
     name: vehicle.vehicleType?.name || 'Unknown Vehicle',
     route: vehicle.route || (vehicle.orders.length > 0 ? vehicle.orders[0].route : 'DEL-MUM'),
+    routes: vehicle.routes, // Include all routes for multi-route vehicles
+    routeList: vehicle.routeList, // Include sorted route list
     utilization: {
       volume: vehicle.maxVolume > 0 ? (vehicle.currentVolume / vehicle.maxVolume) * 100 : 0,
       weight: vehicle.maxWeight > 0 ? (vehicle.currentWeight / vehicle.maxWeight) * 100 : 0

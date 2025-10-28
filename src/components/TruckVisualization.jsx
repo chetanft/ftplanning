@@ -740,7 +740,11 @@ const TruckVisualization = ({ planData }) => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Route:</span>
-                            <span className="font-medium text-xs">{selectedVehicle.route || 'Mixed'}</span>
+                            <span className="font-medium text-xs">
+                              {selectedVehicle.route === 'MIXED' && selectedVehicle.routeList
+                                ? selectedVehicle.routeList.join(' → ')
+                                : selectedVehicle.route || 'Unknown'}
+                            </span>
                           </div>
                         </>
                       ) : null;
@@ -749,7 +753,7 @@ const TruckVisualization = ({ planData }) => {
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Drop Points:</span>
-                  <span className="font-medium">{planData.dropPoints || 1}</span>
+                  <span className="font-medium">{selectedVehicle?.dropPoints?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Route Strategy:</span>
@@ -758,6 +762,69 @@ const TruckVisualization = ({ planData }) => {
               </div>
             </div>
           </div>
+
+          {/* Drop Sequence Statistics */}
+          {selectedVehicleId !== 'all' && (() => {
+            const selectedVehicle = planData.vehicles?.find(v => v.id === selectedVehicleId);
+            if (!selectedVehicle?.orders || selectedVehicle.orders.length === 0) return null;
+
+            // Group orders by drop sequence
+            const dropSequenceGroups = {};
+            selectedVehicle.orders.forEach(order => {
+              const dropSeq = order.dropSequence || 1;
+              if (!dropSequenceGroups[dropSeq]) {
+                dropSequenceGroups[dropSeq] = [];
+              }
+              dropSequenceGroups[dropSeq].push(order);
+            });
+
+            const dropSequences = Object.keys(dropSequenceGroups).sort((a, b) => a - b);
+
+            return (
+              <div className="card">
+                <h3 className="text-lg font-semibold mb-4">Drop Sequence Breakdown</h3>
+                <div className="space-y-2 text-sm">
+                  {dropSequences.map((dropSeq) => {
+                    const orders = dropSequenceGroups[dropSeq];
+                    const totalItems = orders.reduce((sum, order) => sum + order.quantity, 0);
+                    const totalWeight = orders.reduce((sum, order) => sum + (order.weight * order.quantity), 0);
+
+                    const dropColors = {
+                      '1': 'bg-blue-100 border-blue-300',
+                      '2': 'bg-purple-100 border-purple-300',
+                      '3': 'bg-pink-100 border-pink-300',
+                      '4': 'bg-green-100 border-green-300'
+                    };
+
+                    const colorClass = dropColors[dropSeq] || 'bg-gray-100 border-gray-300';
+                    const colorDot = {
+                      '1': 'bg-blue-500',
+                      '2': 'bg-purple-500',
+                      '3': 'bg-pink-500',
+                      '4': 'bg-green-500'
+                    };
+                    const dotClass = colorDot[dropSeq] || 'bg-gray-500';
+
+                    return (
+                      <div key={dropSeq} className={`p-3 rounded border-l-4 ${colorClass}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full ${dotClass} mr-2`}></div>
+                            <span className="font-medium">Drop {dropSeq}</span>
+                          </div>
+                          <span className="text-xs text-gray-600">{orders.length} order{orders.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                          <div>Items: <span className="font-medium text-gray-900">{totalItems}</span></div>
+                          <div>Weight: <span className="font-medium text-gray-900">{totalWeight.toFixed(1)} kg</span></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Selected Item Details */}
           {selectedItem && (
@@ -820,25 +887,51 @@ const TruckVisualization = ({ planData }) => {
           <div className="card">
             <h3 className="text-lg font-semibold mb-4">Color Legend</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                <span>High Priority</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
-                <span>Medium Priority</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                <span>Low Priority</span>
-              </div>
-              <div className="pt-2 border-t border-gray-200">
+              {/* Drop Sequence Colors */}
+              <div className="mb-3">
+                <p className="font-medium text-gray-700 mb-2">Drop Sequence:</p>
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                  <span>Drop 1 (Load First)</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                  <span>Drop 2</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="w-4 h-4 bg-pink-500 rounded mr-2"></div>
+                  <span>Drop 3</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                  <span>Drop 4+ (Load Last)</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-gray-200">
+                <p className="font-medium text-gray-700 mb-2">Priority:</p>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                  <span>High Priority</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                  <span>Medium Priority</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="w-4 h-4 bg-green-600 rounded mr-2"></div>
+                  <span>Low Priority</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-gray-200">
+                <p className="font-medium text-gray-700 mb-2">Material Type:</p>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-blue-400 rounded mr-2"></div>
                   <span>Cuboidal Items</span>
                 </div>
                 <div className="flex items-center mt-1">
-                  <div className="w-4 h-4 bg-purple-500 rounded-full mr-2"></div>
+                  <div className="w-4 h-4 bg-purple-400 rounded-full mr-2"></div>
                   <span>Cylindrical Items</span>
                 </div>
               </div>
