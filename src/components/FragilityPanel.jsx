@@ -143,24 +143,42 @@ const FragilityPanel = ({
   const renderPackagingSelector = () => {
     const currentPackaging = selectedOrder?.packagingType || 'corrugated_box';
     const packagingInfo = getPackagingType(currentPackaging);
+    const selectedOption = packagingTypeOptions.find(opt => opt.id === currentPackaging);
 
     return (
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-700">
           Packaging Type
         </label>
-        <select
-          value={currentPackaging}
-          onChange={(e) => handlePackagingChange(e.target.value)}
-          disabled={readOnly}
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          {packagingTypeOptions.map(opt => (
-            <option key={opt.id} value={opt.id}>
-              {opt.icon} {opt.label}
-            </option>
-          ))}
-        </select>
+        
+        {/* Display selected value */}
+        <div className="relative">
+          <select
+            value={currentPackaging}
+            onChange={(e) => handlePackagingChange(e.target.value)}
+            disabled={readOnly}
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none pr-8"
+          >
+            {packagingTypeOptions.map(opt => (
+              <option key={opt.id} value={opt.id}>
+                {opt.icon} {opt.label}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          </div>
+        </div>
+        
+        {/* Show selected option display */}
+        {selectedOption && (
+          <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center">
+              <span className="text-2xl mr-2">{selectedOption.icon}</span>
+              <span className="text-sm font-medium text-gray-700">{selectedOption.label}</span>
+            </div>
+          </div>
+        )}
 
         {packagingInfo && (
           <div className="p-3 bg-gray-50 rounded-lg">
