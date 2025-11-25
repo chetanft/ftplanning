@@ -6,6 +6,7 @@ import RouteVisualization from './RouteVisualization';
 import PlanOptionsPanel from './PlanOptionsPanel';
 import ErrorBoundary from './ErrorBoundary';
 import { validateOrders, getValidationStages } from '../utils/planValidation';
+import { vehicleTypes } from '../data/mockData';
 
 const CreatePlanPage = ({
   selectedOrders,
@@ -32,7 +33,7 @@ const CreatePlanPage = ({
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStage, setGenerationStage] = useState('');
   
-  // Plan Options State
+  // Plan Options State - CONNECTED to actual generation
   const [showPlanOptions, setShowPlanOptions] = useState(false);
   const [planOptions, setPlanOptions] = useState({
     loadPriorityStrategy: 'balanced',
@@ -43,7 +44,7 @@ const CreatePlanPage = ({
     maxVolumeUtilization: 90,
     enableProtectedZoneLoading: true,
     allowPartialVehicleUsage: true,
-    vehicleTypeOverride: 'auto',
+    vehicleTypeOverride: 'auto', // 'auto', 'small', 'medium', 'large', or specific vehicle ID
     groupByRoute: true,
     stabilityEnforcement: true,
     riskToleranceThreshold: 50
@@ -114,7 +115,7 @@ const CreatePlanPage = ({
     startGeneration();
   };
 
-  // Step 2: Plan Generation - now with real stages
+  // Step 2: Plan Generation - now with real stages and CONNECTED vehicle selection
   const GENERATION_STAGES = [
     { id: 'analyze', label: 'Analyzing orders...', weight: 15 },
     { id: 'routes', label: 'Calculating route distances...', weight: 20 },
@@ -143,14 +144,55 @@ const CreatePlanPage = ({
         setGenerationProgress(currentProgress);
       }
 
+      // Build vehicle configuration based on planOptions.vehicleTypeOverride
+      let vehicleConfig = [];
+      
+      if (planOptions.vehicleTypeOverride === 'auto') {
+        // Let the optimization algorithm decide
+        vehicleConfig = [];
+      } else if (['small', 'medium', 'large', 'mixed'].includes(planOptions.vehicleTypeOverride)) {
+        // Size category - let algorithm pick within category
+        vehicleConfig = [];
+      } else {
+        // Specific vehicle type selected - use that vehicle
+        const selectedVehicle = vehicleTypes.find(v => v.id === planOptions.vehicleTypeOverride);
+        if (selectedVehicle) {
+          // Calculate how many of this vehicle type we need
+          const totalWeight = selectedOrders.reduce((sum, o) => sum + (o.weight * (o.quantity || 1)), 0);
+          const totalVolume = selectedOrders.reduce((sum, o) => {
+            if (o.materialType === 'cuboidal') {
+              const vol = (o.dimensions.length * o.dimensions.width * o.dimensions.height) / 1e9;
+              return sum + (vol * (o.quantity || 1));
+            } else if (o.materialType === 'cylindrical') {
+              const r = (o.dimensions.diameter || 0) / 2000;
+              const h = (o.dimensions.height || 0) / 1000;
+              return sum + (Math.PI * r * r * h * (o.quantity || 1));
+            }
+            return sum;
+          }, 0);
+          
+          const vehiclesNeededByWeight = Math.ceil(totalWeight / selectedVehicle.maxWeight);
+          const vehiclesNeededByVolume = Math.ceil(totalVolume / selectedVehicle.volume);
+          const vehiclesNeeded = Math.max(vehiclesNeededByWeight, vehiclesNeededByVolume, 1);
+          
+          vehicleConfig = [{ type: selectedVehicle.id, quantity: vehiclesNeeded }];
+          
+          console.log(`Using specific vehicle: ${selectedVehicle.name} x ${vehiclesNeeded}`);
+          console.log(`Total weight: ${totalWeight}kg, Vehicle capacity: ${selectedVehicle.maxWeight}kg`);
+          console.log(`Total volume: ${totalVolume.toFixed(2)}m³, Vehicle capacity: ${selectedVehicle.volume}m³`);
+        }
+      }
+
       // Actually trigger plan generation with user-configured options
       await onGeneratePlan({
-        vehicles: [], // Will be auto-calculated by the optimization algorithm
+        vehicles: vehicleConfig, // Pass the configured vehicles
         priorities: [planOptions.loadPriorityStrategy],
         dropPoints: 1,
         materialTypes: materialTypes,
         routeStrategy: planOptions.groupByRoute ? 'separate' : 'consolidate',
         loadingSequence: planOptions.stackLogic,
+        // Pass vehicle type override for the optimization algorithm to respect
+        vehicleTypeOverride: planOptions.vehicleTypeOverride,
         // Pass all plan options to optimization engine
         ...planOptions
       });
@@ -192,6 +234,24 @@ const CreatePlanPage = ({
     if (result.errors.length > 0) return 'error';
     if (result.warnings.length > 0) return 'warning';
     return 'passed';
+  };
+
+  // Get display name for selected vehicle
+  const getSelectedVehicleDisplay = () => {
+    if (planOptions.vehicleTypeOverride === 'auto') {
+      return 'AI Auto-Select';
+    }
+    if (['small', 'medium', 'large', 'mixed'].includes(planOptions.vehicleTypeOverride)) {
+      const labels = {
+        small: 'Small (LCV) - Tata Ace',
+        medium: 'Medium (SCV) - Eicher 14ft/17ft',
+        large: 'Large (HCV) - Containers',
+        mixed: 'Mixed Fleet'
+      };
+      return labels[planOptions.vehicleTypeOverride];
+    }
+    const vehicle = vehicleTypes.find(v => v.id === planOptions.vehicleTypeOverride);
+    return vehicle ? vehicle.name : planOptions.vehicleTypeOverride;
   };
 
   const renderValidationStep = () => {
@@ -301,7 +361,10 @@ const CreatePlanPage = ({
                   <Settings className="h-5 w-5 text-primary-600 mr-3" />
                   <div className="text-left">
                     <h3 className="text-md font-semibold text-gray-900">Plan Generation Options</h3>
-                    <p className="text-sm text-gray-500">Configure AI parameters before generating plan</p>
+                    <p className="text-sm text-gray-500">
+                      Vehicle: <span className="font-medium text-primary-600">{getSelectedVehicleDisplay()}</span>
+                      {' • '}Stack: <span className="font-medium">{planOptions.stackLogic.toUpperCase()}</span>
+                    </p>
                   </div>
                 </div>
                 <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform ${showPlanOptions ? 'rotate-90' : ''}`} />
@@ -352,7 +415,9 @@ const CreatePlanPage = ({
       <div className="max-w-4xl mx-auto space-y-8 text-center">
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900">Plan Generation</h2>
-          <p className="text-gray-600 mt-1">AI is optimizing costs and capacity for your plan.</p>
+          <p className="text-gray-600 mt-1">
+            Using <span className="font-medium text-primary-600">{getSelectedVehicleDisplay()}</span> for optimization
+          </p>
         </div>
 
         {generationStatus === 'generating' && (
@@ -502,6 +567,9 @@ const CreatePlanPage = ({
                     <div className="p-4 bg-gray-50 rounded-lg">
                      <div className="text-sm text-gray-500">Vehicles Used</div>
                      <div className="text-2xl font-bold">{planData.vehicles.length}</div>
+                     <div className="text-xs text-gray-400 mt-1">
+                       {[...new Set(planData.vehicles.map(v => v.vehicleType?.name || v.name))].join(', ')}
+                     </div>
                    </div>
                     <div className="p-4 bg-gray-50 rounded-lg">
                      <div className="text-sm text-gray-500">Total Weight</div>

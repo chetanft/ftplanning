@@ -575,6 +575,9 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
     return instances;
   };
 
+  // Check if user provided explicit vehicle config
+  const hasExplicitVehicleConfig = vehicleConfig && vehicleConfig.length > 0;
+
   if (routeStrategy === 'separate') {
     // Strategy 1: Separate vehicles for each route
     const ordersByRoute = groupOrdersByRoute(orders);
@@ -583,38 +586,91 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
       // Calculate requirements for this route
       const { totalWeight, totalVolume } = calculateOrderTotals(routeOrders);
 
-      // Determine optimal vehicle allocation for this route using filtered vehicle types
-      const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, availableVehicleTypes);
-      const bestSuggestion = routeVehicleSuggestions[0];
-
-      if (bestSuggestion) {
-        // Use suggested vehicles for this route
-        bestSuggestion.vehicles.forEach(vc => {
-          const vehicleType = vehicleTypes.find(vt => vt.id === vc.type);
-          const routeVehicles = createVehicleInstances(vc.quantity, vehicleType);
-          const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
-          allVehicleInstances.push(...distributedVehicles);
+      if (hasExplicitVehicleConfig) {
+        // User explicitly selected vehicles - use those
+        console.log(`Using explicit vehicle config for route ${route}:`, vehicleConfig);
+        vehicleConfig.forEach(vc => {
+          // Find vehicle type from available types (respects override)
+          const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) || 
+                             vehicleTypes.find(vt => vt.id === vc.type);
+          if (vehicleType) {
+            const routeVehicles = createVehicleInstances(vc.quantity, vehicleType);
+            const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
+            allVehicleInstances.push(...distributedVehicles);
+          }
         });
       } else {
-        // Fallback to user-selected vehicles
-        vehicleConfig.forEach(vc => {
-          const vehicleType = vehicleTypes.find(vt => vt.id === vc.type);
-          const routeVehicles = createVehicleInstances(vc.quantity, vehicleType);
-          const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
-          allVehicleInstances.push(...distributedVehicles);
-        });
+        // Auto-select: Determine optimal vehicle allocation using filtered vehicle types
+        const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, availableVehicleTypes);
+        const bestSuggestion = routeVehicleSuggestions[0];
+
+        if (bestSuggestion) {
+          // Use suggested vehicles for this route (from availableVehicleTypes)
+          console.log(`Auto-selected for route ${route}:`, bestSuggestion.description);
+          bestSuggestion.vehicles.forEach(vc => {
+            // Find from available types to ensure we respect the override
+            const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type);
+            if (vehicleType) {
+              const routeVehicles = createVehicleInstances(vc.quantity, vehicleType);
+              const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
+              allVehicleInstances.push(...distributedVehicles);
+            }
+          });
+        } else {
+          // Last resort fallback - use smallest available vehicle
+          console.warn(`No suggestion found for route ${route}, using smallest available vehicle`);
+          const fallbackVehicle = availableVehicleTypes[0];
+          if (fallbackVehicle) {
+            const vehiclesNeeded = Math.max(1, Math.ceil(Math.max(
+              totalWeight / fallbackVehicle.maxWeight,
+              totalVolume / fallbackVehicle.volume
+            )));
+            const routeVehicles = createVehicleInstances(vehiclesNeeded, fallbackVehicle);
+            const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
+            allVehicleInstances.push(...distributedVehicles);
+          }
+        }
       }
     });
   } else {
     // Strategy 2: Consolidate orders across routes - use single vehicle pool
     const vehicleInstances = [];
-    vehicleConfig.forEach(vc => {
-      const vehicleType = vehicleTypes.find(vt => vt.id === vc.type);
-      vehicleInstances.push(...createVehicleInstances(vc.quantity, vehicleType));
-    });
+    
+    if (hasExplicitVehicleConfig) {
+      // Use explicit config
+      vehicleConfig.forEach(vc => {
+        const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) || 
+                           vehicleTypes.find(vt => vt.id === vc.type);
+        if (vehicleType) {
+          vehicleInstances.push(...createVehicleInstances(vc.quantity, vehicleType));
+        }
+      });
+    } else {
+      // Auto-select for consolidated strategy
+      const { totalWeight, totalVolume } = calculateOrderTotals(orders);
+      const suggestions = generateVehicleSuggestions(orders, availableVehicleTypes);
+      
+      if (suggestions.length > 0) {
+        suggestions[0].vehicles.forEach(vc => {
+          const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type);
+          if (vehicleType) {
+            vehicleInstances.push(...createVehicleInstances(vc.quantity, vehicleType));
+          }
+        });
+      } else {
+        // Fallback
+        const fallbackVehicle = availableVehicleTypes[0];
+        if (fallbackVehicle) {
+          const vehiclesNeeded = Math.max(1, Math.ceil(Math.max(
+            totalWeight / fallbackVehicle.maxWeight,
+            totalVolume / fallbackVehicle.volume
+          )));
+          vehicleInstances.push(...createVehicleInstances(vehiclesNeeded, fallbackVehicle));
+        }
+      }
+    }
 
     // Always consolidate into the same vehicle pool
-    // allowMixedRoutes controls whether orders from different routes can be mixed or loaded sequentially
     const distributedVehicles = distributeOrdersForRoute(orders, vehicleInstances, loadingSequence);
     allVehicleInstances.push(...distributedVehicles);
   }
