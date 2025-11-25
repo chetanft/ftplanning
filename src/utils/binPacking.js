@@ -29,8 +29,9 @@ export class BinPacker {
   }
 
   // Sort items by volume (largest first) and weight
+  // Note: Creates a copy to avoid mutating the original array
   sortItemsForPacking(items) {
-    return items.sort((a, b) => {
+    return [...items].sort((a, b) => {
       const volumeA = this.calculateVolume(a);
       const volumeB = this.calculateVolume(b);
       if (Math.abs(volumeA - volumeB) < 0.001) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Truck, Package, Settings, BarChart3, FileText, Map } from 'lucide-react';
 import OrderIntake from './components/OrderIntake';
 import MaterialTypeModal from './components/MaterialTypeModal';
@@ -41,7 +41,10 @@ function App() {
   // Google Maps API key - in production, this should be in environment variables
   // For Vite, use import.meta.env instead of process.env
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
-  const googleMapsService = new GoogleMapsService(googleMapsApiKey);
+  
+  // Memoize GoogleMapsService to prevent recreation on every render
+  // This improves performance and prevents unnecessary API reconnections
+  const googleMapsService = useMemo(() => new GoogleMapsService(googleMapsApiKey), [googleMapsApiKey]);
 
 
 

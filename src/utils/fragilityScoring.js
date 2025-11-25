@@ -352,13 +352,19 @@ export const calculateFragilityScore = (factors) => {
   let totalWeight = 0;
 
   Object.keys(weights).forEach(factor => {
-    if (factors[factor] !== undefined) {
+    if (factors[factor] !== undefined && factors[factor] !== null) {
       totalScore += factors[factor] * weights[factor];
       totalWeight += weights[factor];
     }
   });
 
-  return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 2;
+  // Ensure proper rounding: totalScore is weighted sum, divide by totalWeight to get average
+  // Then round to nearest integer, clamping between 1 and 5
+  if (totalWeight > 0) {
+    const rawScore = totalScore / totalWeight;
+    return Math.max(1, Math.min(5, Math.round(rawScore)));
+  }
+  return 2; // Default to durable
 };
 
 /**

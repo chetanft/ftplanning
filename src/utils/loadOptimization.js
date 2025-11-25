@@ -265,8 +265,11 @@ export class LoadOptimizer {
   getPositionDescription(position) {
     if (!position) return 'Position not assigned';
     
-    const xPos = position.x < this.vehicle.dimensions.length / 3 ? 'Back' :
-                 position.x > (2 * this.vehicle.dimensions.length) / 3 ? 'Front' : 'Middle';
+    // Safely check for vehicle dimensions with fallback
+    const vehicleLength = this.vehicle?.dimensions?.length || 6000; // Default 6m truck length
+    
+    const xPos = position.x < vehicleLength / 3 ? 'Back' :
+                 position.x > (2 * vehicleLength) / 3 ? 'Front' : 'Middle';
     const yPos = position.y < 500 ? 'Floor level' :
                  position.y < 1200 ? 'Mid-height' : 'Upper level';
     
