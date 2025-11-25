@@ -623,6 +623,7 @@ export class ConstraintsEngine {
   }
 
   // Calculate placement score (higher is better)
+  // Note: This method does NOT call validatePlacement to avoid infinite recursion
   calculatePlacementScore(item, position, existingItems) {
     let score = 100;
 
@@ -636,14 +637,22 @@ export class ConstraintsEngine {
     // Bonus for good support
     if (item.materialType === 'cuboidal') {
       const supportArea = this.calculateSupportArea(item, position, existingItems);
-      const itemArea = (item.dimensions.length * item.dimensions.width) / 1000000;
-      const supportRatio = supportArea / itemArea;
+      const itemDims = item.dimensions || {};
+      const itemArea = ((itemDims.length || 0) * (itemDims.width || 0)) / 1000000;
+      const supportRatio = itemArea > 0 ? supportArea / itemArea : 0;
       score += supportRatio * 20;
     }
 
-    // Penalty for constraint violations
-    const validation = this.validatePlacement(item, position, existingItems);
-    score -= validation.violations.length * 10;
+    // Simple boundary check penalty (non-recursive)
+    const itemDims = this.getItemDimensions(item);
+    if (this.vehicle?.dimensions) {
+      const exceedsBounds = 
+        position.x + itemDims.length > this.vehicle.dimensions.length ||
+        position.z + itemDims.width > this.vehicle.dimensions.width ||
+        position.y + itemDims.height > this.vehicle.dimensions.height ||
+        position.x < 0 || position.y < 0 || position.z < 0;
+      if (exceedsBounds) score -= 50;
+    }
 
     return Math.max(0, score);
   }

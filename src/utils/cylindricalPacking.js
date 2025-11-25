@@ -118,14 +118,25 @@ export class CylindricalPacker {
     const radius = item.dimensions.diameter / 2000; // Convert to meters
     const containerRadius = Math.min(this.container.length, this.container.width) / 2000;
 
-    // Try concentric circles from center outward
-    for (let ring = 0; ring < 10; ring++) {
+    // First try the center position (ring 0)
+    const centerPosition = {
+      x: this.container.length / 2000,
+      y: 0.1, // Slight elevation from truck bed
+      z: this.container.width / 2000
+    };
+    
+    if (this.validatePosition(item, centerPosition)) {
+      return centerPosition;
+    }
+
+    // Try concentric circles from center outward (starting from ring 1)
+    for (let ring = 1; ring < 10; ring++) {
       const ringRadius = ring * radius * 2.2; // 10% spacing between cylinders
       
       if (ringRadius + radius > containerRadius) break;
 
       const circumference = 2 * Math.PI * ringRadius;
-      const itemsInRing = Math.floor(circumference / (radius * 2.2));
+      const itemsInRing = Math.max(1, Math.floor(circumference / (radius * 2.2)));
 
       for (let i = 0; i < itemsInRing; i++) {
         const angle = (2 * Math.PI * i) / itemsInRing;

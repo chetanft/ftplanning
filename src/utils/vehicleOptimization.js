@@ -456,8 +456,9 @@ export const distributeOrdersForRoute = (routeOrders, availableVehicles, loading
     });
 
     // If no vehicle can fit the order, assign to the one with most remaining capacity
-    if (!bestVehicle) {
+    if (!bestVehicle && vehicleInstances.length > 0) {
       bestVehicle = vehicleInstances.reduce((best, vehicle) => {
+        if (!best) return vehicle;
         const remainingCapacity = Math.min(
           vehicle.maxWeight - vehicle.currentWeight,
           vehicle.maxVolume - vehicle.currentVolume
@@ -468,7 +469,7 @@ export const distributeOrdersForRoute = (routeOrders, availableVehicles, loading
         );
 
         return remainingCapacity > bestRemainingCapacity ? vehicle : best;
-      });
+      }, null);
     }
 
     if (bestVehicle) {

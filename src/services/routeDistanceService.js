@@ -218,6 +218,11 @@ export const calculateDuration = (distance, routeId = null) => {
     avgSpeed = ROUTE_SPEEDS[speedProfile] || ROUTE_SPEEDS.mixed;
   }
 
+  // Safety check: ensure avgSpeed is never zero or negative to prevent division by zero
+  if (!avgSpeed || avgSpeed <= 0) {
+    avgSpeed = ROUTE_SPEEDS.mixed || 50; // Fallback to 50 km/h
+  }
+
   // Add time for rest stops (15 min per 300km)
   const restStopTime = Math.floor(distance / 300) * 0.25;
   

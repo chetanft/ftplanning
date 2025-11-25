@@ -156,7 +156,10 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
 
       const matchesRoute = routeFilter === 'all' || order.route === routeFilter;
       const matchesMaterial = materialFilter === 'all' || order.materialType === materialFilter;
-      const matchesStatus = order.status.toLowerCase() === statusTab.toLowerCase();
+      // Normalize status comparison: handle space/underscore variations and case differences
+      const normalizedOrderStatus = (order.status || '').toLowerCase().replace(/[\s_]+/g, '_');
+      const normalizedStatusTab = statusTab.toLowerCase().replace(/[\s_]+/g, '_');
+      const matchesStatus = normalizedOrderStatus === normalizedStatusTab;
 
       // Advanced filters
       // Fragility Level
@@ -379,13 +382,12 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           {['Unplanned', 'In Planning', 'Validation Failed', 'Planned', 'Dispatched'].map((status) => {
-            const statusKey = status.toLowerCase().replace(' ', '_');
+            // Normalize status key for consistent comparison
+            const statusKey = status.toLowerCase().replace(/[\s_]+/g, '_');
             const count = orders.filter(o => {
-              const orderStatus = o.status.toLowerCase().replace(' ', '_');
-              return orderStatus === statusKey || 
-                     (statusKey === 'unplanned' && orderStatus === 'unplanned') ||
-                     (statusKey === 'in_planning' && orderStatus === 'in planning') ||
-                     (statusKey === 'validation_failed' && orderStatus === 'validation failed');
+              // Normalize order status the same way for accurate count
+              const orderStatus = (o.status || '').toLowerCase().replace(/[\s_]+/g, '_');
+              return orderStatus === statusKey;
             }).length;
             
             return (
