@@ -506,11 +506,48 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
     routeStrategy = 'separate', // 'separate' or 'consolidate'
     loadingSequence = 'lifo',
     allowMixedRoutes = false,
-    dropPoints = 1
+    dropPoints = 1,
+    vehicleTypeOverride = 'auto' // 'auto', 'small', 'medium', 'large', or specific vehicle ID
   } = options;
 
   let vehicleCounter = 1;
   const allVehicleInstances = [];
+
+  // Filter vehicle types based on override selection
+  let availableVehicleTypes = vehicleTypes;
+  
+  if (vehicleTypeOverride && vehicleTypeOverride !== 'auto') {
+    // Map size categories to actual vehicle types
+    const sizeCategories = {
+      small: ['TATA_ACE'], // Small/mini vehicles (LCV)
+      medium: ['EICHER_14FT', 'EICHER_17FT', 'REFRIGERATED_14FT'], // Medium vehicles (SCV)
+      large: ['CONTAINER_20FT', 'CONTAINER_32FT', 'REFRIGERATED_20FT', 'AIR_RIDE_20FT', 'AIR_RIDE_REEFER'], // Large vehicles (HCV)
+      mixed: vehicleTypes.map(v => v.id) // All vehicles allowed
+    };
+
+    if (sizeCategories[vehicleTypeOverride]) {
+      // Filter by size category
+      availableVehicleTypes = vehicleTypes.filter(v => 
+        sizeCategories[vehicleTypeOverride].includes(v.id)
+      );
+    } else {
+      // Filter by specific vehicle ID or name match
+      availableVehicleTypes = vehicleTypes.filter(v => 
+        v.id === vehicleTypeOverride || 
+        v.id.toLowerCase() === vehicleTypeOverride.toLowerCase() ||
+        v.name.toLowerCase().includes(vehicleTypeOverride.toLowerCase()) ||
+        vehicleTypeOverride.toLowerCase().includes(v.name.toLowerCase().split(' ')[0]) // Match first word (e.g., "tata" matches "Tata Ace")
+      );
+    }
+
+    // Fallback to all vehicles if filter results in empty list
+    if (availableVehicleTypes.length === 0) {
+      console.warn(`No vehicles found for override "${vehicleTypeOverride}", using all available vehicles`);
+      availableVehicleTypes = vehicleTypes;
+    }
+    
+    console.log(`Vehicle override "${vehicleTypeOverride}" - Using vehicles:`, availableVehicleTypes.map(v => v.name).join(', '));
+  }
 
   // Generate drop points based on configuration
   const dropPointsData = generateDropPoints(orders, dropPoints);
@@ -546,8 +583,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
       // Calculate requirements for this route
       const { totalWeight, totalVolume } = calculateOrderTotals(routeOrders);
 
-      // Determine optimal vehicle allocation for this route
-      const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, vehicleTypes);
+      // Determine optimal vehicle allocation for this route using filtered vehicle types
+      const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, availableVehicleTypes);
       const bestSuggestion = routeVehicleSuggestions[0];
 
       if (bestSuggestion) {

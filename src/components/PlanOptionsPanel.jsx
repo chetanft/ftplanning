@@ -67,13 +67,26 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
     { value: 'fifo', label: 'FIFO (First In, First Out)', description: 'First loaded items unloaded first' }
   ];
 
-  // Vehicle Type Options
+  // Vehicle Type Options - Categories and specific vehicles
   const vehicleTypeOptions = [
-    { value: 'auto', label: 'AI Auto-Select', description: 'Let AI choose optimal vehicles' },
-    { value: 'small', label: 'Small (LCV)', description: 'Light Commercial Vehicles only' },
-    { value: 'medium', label: 'Medium (SCV)', description: 'Standard Commercial Vehicles' },
-    { value: 'large', label: 'Large (HCV)', description: 'Heavy Commercial Vehicles' },
-    { value: 'mixed', label: 'Mixed Fleet', description: 'Allow combination of vehicle types' }
+    // Auto selection
+    { value: 'auto', label: '🤖 AI Auto-Select', description: 'Let AI choose optimal vehicles', category: 'auto' },
+    
+    // Size categories
+    { value: 'small', label: '🚚 Small (LCV)', description: 'Tata Ace and similar', category: 'category' },
+    { value: 'medium', label: '🚛 Medium (SCV)', description: 'Eicher 14ft/17ft', category: 'category' },
+    { value: 'large', label: '🚚 Large (HCV)', description: 'Containers 20ft/32ft', category: 'category' },
+    { value: 'mixed', label: '🔄 Mixed Fleet', description: 'Allow any combination', category: 'category' },
+    
+    // Specific vehicles
+    { value: 'TATA_ACE', label: '🚚 Tata Ace', description: 'Mini truck (1.5T)', category: 'specific' },
+    { value: 'EICHER_14FT', label: '🚛 Eicher 14ft', description: 'Medium truck (7T)', category: 'specific' },
+    { value: 'EICHER_17FT', label: '🚛 Eicher 17ft', description: 'Medium truck (9T)', category: 'specific' },
+    { value: 'CONTAINER_20FT', label: '📦 Container 20ft', description: 'Standard container', category: 'specific' },
+    { value: 'CONTAINER_32FT', label: '📦 Container 32ft', description: 'Large container', category: 'specific' },
+    { value: 'REFRIGERATED_14FT', label: '❄️ Refrigerated 14ft', description: 'Cold chain', category: 'specific' },
+    { value: 'REFRIGERATED_20FT', label: '❄️ Refrigerated 20ft', description: 'Large cold chain', category: 'specific' },
+    { value: 'AIR_RIDE_20FT', label: '🛡️ Air Ride 20ft', description: 'Fragile goods', category: 'specific' }
   ];
 
   return (
@@ -171,12 +184,43 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               onChange={(e) => handleOptionChange('vehicleTypeOverride', e.target.value)}
               className="input-field"
             >
-              {vehicleTypeOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label} - {option.description}
-                </option>
-              ))}
+              <optgroup label="🤖 Automatic">
+                {vehicleTypeOptions.filter(o => o.category === 'auto').map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} - {option.description}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="📊 By Size Category">
+                {vehicleTypeOptions.filter(o => o.category === 'category').map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} - {option.description}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="🚛 Specific Vehicle Type">
+                {vehicleTypeOptions.filter(o => o.category === 'specific').map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label} - {option.description}
+                  </option>
+                ))}
+              </optgroup>
             </select>
+            
+            {/* Show selected vehicle info */}
+            {localOptions.vehicleTypeOverride !== 'auto' && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-sm">
+                  <span className="font-medium text-blue-800">Selected: </span>
+                  <span className="text-blue-700">
+                    {vehicleTypeOptions.find(o => o.value === localOptions.vehicleTypeOverride)?.label || localOptions.vehicleTypeOverride}
+                  </span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Only this vehicle type will be used for plan generation
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

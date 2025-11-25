@@ -107,10 +107,13 @@ function App() {
       routeStrategy: constraints.routeStrategy || planConfig.routeStrategy || 'separate',
       loadingSequence: constraints.loadingSequence || planConfig.loadingSequence || 'lifo',
       allowMixedRoutes: planConfig.allowMixedRoutes || false,
-      dropPoints: planConfig.dropPoints || 1
+      dropPoints: planConfig.dropPoints || 1,
+      // Pass vehicle type override from plan options
+      vehicleTypeOverride: planConfig.vehicleTypeOverride || 'auto'
     };
 
     // Use the optimized distribution algorithm with route awareness
+    // vehicleTypeOverride will filter available vehicles based on user selection
     const vehicles = distributeOrdersAcrossVehicles(selectedOrders, planConfig.vehicles, vehicleTypes, routeOptions);
 
     // Enhanced load optimization for each vehicle
