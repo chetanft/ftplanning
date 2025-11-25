@@ -77,7 +77,29 @@ const parseOrderData = (rawData) => {
     'height': 'height',
     'diameter': 'diameter',
     'priority': 'priority',
-    'status': 'status'
+    'status': 'status',
+    // Fragility and packaging fields
+    'fragility': 'fragilityScore',
+    'fragility score': 'fragilityScore',
+    'fragility level': 'fragilityScore',
+    'fragile': 'fragile',
+    'is fragile': 'fragile',
+    'packaging': 'packagingType',
+    'packaging type': 'packagingType',
+    'package type': 'packagingType',
+    'material profile': 'materialProfile',
+    'product category': 'materialProfile',
+    'crush resistance': 'crushResistance',
+    'load bearing': 'loadBearingCapacity',
+    'load bearing capacity': 'loadBearingCapacity',
+    'max stack weight': 'loadBearingCapacity',
+    'temperature controlled': 'temperatureControlled',
+    'temp controlled': 'temperatureControlled',
+    'refrigerated': 'temperatureControlled',
+    'hazardous': 'hazardous',
+    'hazmat': 'hazardous',
+    'special handling': 'specialHandling',
+    'handling instructions': 'specialHandling'
   };
 
   // Create mapping from Excel columns to our data structure
@@ -165,7 +187,134 @@ const parseOrderRow = (row, fieldMapping, rowIndex) => {
     order.fragile = getValue('fragile', 'false').toLowerCase() === 'true';
   }
 
+  // Add fragility and packaging properties
+  const fragilityScore = getNumericValue('fragilityScore', 0);
+  if (fragilityScore >= 1 && fragilityScore <= 5) {
+    order.fragilityScore = fragilityScore;
+  }
+
+  const packagingType = getValue('packagingType', '');
+  if (packagingType) {
+    order.packagingType = normalizePackagingType(packagingType);
+  }
+
+  const materialProfile = getValue('materialProfile', '');
+  if (materialProfile) {
+    order.materialProfile = normalizeMaterialProfile(materialProfile);
+  }
+
+  // Parse additional fragility-related fields
+  const crushResistance = getNumericValue('crushResistance', 0);
+  if (crushResistance > 0) {
+    order.crushResistance = crushResistance;
+  }
+
+  const loadBearing = getNumericValue('loadBearingCapacity', 0);
+  if (loadBearing > 0) {
+    order.loadBearingCapacity = loadBearing;
+  }
+
+  // Boolean fields
+  const tempControlled = getValue('temperatureControlled', '').toLowerCase();
+  if (tempControlled === 'true' || tempControlled === 'yes' || tempControlled === '1') {
+    order.temperatureControlled = true;
+  }
+
+  const hazardous = getValue('hazardous', '').toLowerCase();
+  if (hazardous === 'true' || hazardous === 'yes' || hazardous === '1') {
+    order.hazardous = true;
+  }
+
+  const specialHandling = getValue('specialHandling', '');
+  if (specialHandling) {
+    order.specialHandling = specialHandling.split(',').map(s => s.trim()).filter(s => s);
+  }
+
+  // Legacy fragile flag - convert to fragility score if not already set
+  const fragileValue = getValue('fragile', '').toLowerCase();
+  if (!order.fragilityScore && (fragileValue === 'true' || fragileValue === 'yes' || fragileValue === '1')) {
+    order.fragile = true;
+    order.fragilityScore = 4; // Default fragile to level 4
+  }
+
   return order;
+};
+
+/**
+ * Normalize packaging type to match system values
+ */
+const normalizePackagingType = (value) => {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, '_').trim();
+  
+  const mappings = {
+    'corrugated': 'corrugated_box',
+    'corrugated_box': 'corrugated_box',
+    'cardboard': 'corrugated_box',
+    'box': 'corrugated_box',
+    'heavy_duty': 'corrugated_box_heavy',
+    'heavy_duty_box': 'corrugated_box_heavy',
+    'wooden_crate': 'wooden_crate',
+    'crate': 'wooden_crate',
+    'wood': 'wooden_crate',
+    'pallet': 'wooden_pallet',
+    'wooden_pallet': 'wooden_pallet',
+    'plastic': 'plastic_container',
+    'plastic_container': 'plastic_container',
+    'plastic_crate': 'plastic_crate',
+    'drum': 'metal_drum',
+    'metal_drum': 'metal_drum',
+    'steel_drum': 'metal_drum',
+    'metal': 'metal_container',
+    'metal_container': 'metal_container',
+    'foam': 'foam_padded',
+    'foam_padded': 'foam_padded',
+    'bubble': 'bubble_wrapped',
+    'bubble_wrap': 'bubble_wrapped',
+    'bubble_wrapped': 'bubble_wrapped',
+    'shrink': 'shrink_wrap',
+    'shrink_wrap': 'shrink_wrap',
+    'thermal': 'thermal_insulated',
+    'thermal_insulated': 'thermal_insulated',
+    'insulated': 'thermal_insulated',
+    'sack': 'woven_sack',
+    'woven_sack': 'woven_sack',
+    'paper_sack': 'paper_sack',
+    'glass': 'glass_carton',
+    'glass_carton': 'glass_carton',
+    'cylinder_cage': 'cylinder_cage',
+    'gas_cage': 'cylinder_cage'
+  };
+
+  return mappings[normalized] || 'corrugated_box';
+};
+
+/**
+ * Normalize material profile to match system values
+ */
+const normalizeMaterialProfile = (value) => {
+  const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, '_').trim();
+  
+  const validProfiles = [
+    'ELECTRONICS_CONSUMER', 'ELECTRONICS_HEAVY', 'GLASS_CONTAINERS', 'CERAMICS',
+    'LIQUID_STANDARD', 'LIQUID_HAZARDOUS', 'FOOD_DRY', 'FOOD_PERISHABLE',
+    'PHARMA_STANDARD', 'PHARMA_SENSITIVE', 'METAL_PARTS', 'MACHINERY',
+    'TEXTILES', 'PAPER_PRODUCTS', 'FURNITURE_WOOD', 'COSMETICS',
+    'GAS_CYLINDERS', 'GENERAL'
+  ];
+
+  // Try direct match
+  if (validProfiles.includes(normalized)) {
+    return normalized;
+  }
+
+  // Try partial match
+  for (const profile of validProfiles) {
+    if (profile.includes(normalized) || normalized.includes(profile.split('_')[0])) {
+      return profile;
+    }
+  }
+
+  return 'GENERAL';
 };
 
 /**

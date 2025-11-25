@@ -331,8 +331,70 @@ export class BinPacker {
   }
 
   calculateSupportArea(item, space) {
-    // Simplified calculation - return full area for now
-    return (item.dimensions.length * item.dimensions.width) / 1000000;
+    // Calculate actual overlap area between item and supporting items below
+    const itemDims = this.getItemDimensions(item);
+    const itemArea = (itemDims.length * itemDims.width) / 1000000; // in m²
+    
+    // Find items that could provide support at this position
+    const potentialPosition = {
+      x: space.x,
+      y: space.y,
+      z: space.z
+    };
+    
+    // Get items directly below this potential position
+    const supportingItems = this.placedItems.filter(placed => {
+      if (!placed.position) return false;
+      
+      const placedDims = this.getItemDimensions(placed);
+      const placedTop = placed.position.y + placedDims.height;
+      
+      // Item must be just below the space (within 50mm tolerance)
+      if (Math.abs(placedTop - space.y) > 50) return false;
+      
+      // Check horizontal overlap
+      const overlapX = Math.max(0,
+        Math.min(potentialPosition.x + itemDims.length, placed.position.x + placedDims.length) -
+        Math.max(potentialPosition.x, placed.position.x)
+      );
+      const overlapZ = Math.max(0,
+        Math.min(potentialPosition.z + itemDims.width, placed.position.z + placedDims.width) -
+        Math.max(potentialPosition.z, placed.position.z)
+      );
+      
+      return overlapX > 0 && overlapZ > 0;
+    });
+
+    // If no supporting items and we're above ground, support comes from floor
+    if (supportingItems.length === 0) {
+      if (space.y <= 10) {
+        return itemArea; // Full support from floor
+      }
+      return 0; // No support - floating in air
+    }
+
+    // Calculate total overlapping support area from all supporting items
+    let totalSupportArea = 0;
+    
+    for (const supporting of supportingItems) {
+      const supportDims = this.getItemDimensions(supporting);
+      
+      // Calculate overlap rectangle
+      const overlapX = Math.max(0,
+        Math.min(potentialPosition.x + itemDims.length, supporting.position.x + supportDims.length) -
+        Math.max(potentialPosition.x, supporting.position.x)
+      );
+      const overlapZ = Math.max(0,
+        Math.min(potentialPosition.z + itemDims.width, supporting.position.z + supportDims.width) -
+        Math.max(potentialPosition.z, supporting.position.z)
+      );
+      
+      // Convert to m² and add to total
+      totalSupportArea += (overlapX * overlapZ) / 1000000;
+    }
+
+    // Return the smaller of actual support or item area (can't have more support than item size)
+    return Math.min(totalSupportArea, itemArea);
   }
 
   checkCylindricalSupport(item, space) {

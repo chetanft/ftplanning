@@ -1,10 +1,12 @@
 /**
  * Advanced Load Optimization Engine
- * Combines bin packing with real-world constraints
+ * Combines bin packing with real-world constraints and fragility considerations
  */
 
 import { BinPacker } from './binPacking.js';
 import { CylindricalPacker } from './cylindricalPacking.js';
+import { assessOrderFragility, checkStackingCompatibility, calculateLoadRiskScore, getHandlingInstructions } from './fragilityScoring.js';
+import { checkPackagingCompatibility, getPackagingType } from './packagingTypes.js';
 
 export class LoadOptimizer {
   constructor(vehicleSpecs, constraints = {}) {
@@ -14,15 +16,25 @@ export class LoadOptimizer {
       weightDistributionTolerance: constraints.weightDistributionTolerance || 0.1,
       stackingRules: constraints.stackingRules || {},
       loadingSequence: constraints.loadingSequence || 'lifo',
+      // Fragility-aware constraints
+      enableFragilityOptimization: constraints.enableFragilityOptimization !== false,
+      protectedZoneEnabled: constraints.protectedZoneEnabled !== false,
+      maxRiskScore: constraints.maxRiskScore || 50,
       ...constraints
     };
   }
 
   // Main optimization function
   optimizeLoad(orders) {
+    // Pre-process orders with fragility assessment
+    const assessedOrders = this.assessOrdersFragility(orders);
+
+    // Sort orders for optimal loading (fragility-aware)
+    const sortedOrders = this.sortOrdersForLoading(assessedOrders);
+
     // Separate orders by material type
-    const cuboidalOrders = orders.filter(o => o.materialType === 'cuboidal');
-    const cylindricalOrders = orders.filter(o => o.materialType === 'cylindrical');
+    const cuboidalOrders = sortedOrders.filter(o => o.materialType === 'cuboidal');
+    const cylindricalOrders = sortedOrders.filter(o => o.materialType === 'cylindrical');
 
     // Create optimized load plan
     const loadPlan = {
@@ -33,7 +45,11 @@ export class LoadOptimizer {
       layers: [],
       warnings: [],
       utilization: { weight: 0, volume: 0 },
-      items: []
+      items: [],
+      // New fragility-related fields
+      fragilityProfile: this.calculateFragilityProfile(assessedOrders),
+      riskAssessment: null,
+      loadingInstructions: []
     };
 
     // Pack cuboidal items first (usually more structured)
@@ -52,7 +68,256 @@ export class LoadOptimizer {
     this.validateLoadPlan(loadPlan);
     this.optimizeLoadSequence(loadPlan);
 
+    // NEW: Perform fragility validation and generate instructions
+    if (this.constraints.enableFragilityOptimization) {
+      this.validateFragilityArrangement(loadPlan);
+      loadPlan.riskAssessment = calculateLoadRiskScore(loadPlan.items);
+      loadPlan.loadingInstructions = this.generateFragilityAwareInstructions(loadPlan);
+    }
+
     return loadPlan;
+  }
+
+  // NEW: Assess fragility for all orders
+  assessOrdersFragility(orders) {
+    return orders.map(order => ({
+      ...order,
+      fragilityAssessment: assessOrderFragility(order),
+      packagingInfo: getPackagingType(order.packagingType || 'corrugated_box')
+    }));
+  }
+
+  // NEW: Sort orders for optimal loading based on fragility
+  sortOrdersForLoading(orders) {
+    return [...orders].sort((a, b) => {
+      // First priority: Delivery sequence (LIFO)
+      if (this.constraints.loadingSequence === 'lifo') {
+        const seqA = a.dropSequence || 999;
+        const seqB = b.dropSequence || 999;
+        if (seqA !== seqB) return seqB - seqA;
+      }
+
+      // Second priority: Fragility (less fragile first - goes to bottom)
+      const fragA = a.fragilityAssessment?.score || 2;
+      const fragB = b.fragilityAssessment?.score || 2;
+      if (fragA !== fragB) return fragA - fragB;
+
+      // Third priority: Weight (heavier first)
+      const weightA = a.weight * (a.quantity || 1);
+      const weightB = b.weight * (b.quantity || 1);
+      return weightB - weightA;
+    });
+  }
+
+  // NEW: Calculate fragility profile for the load
+  calculateFragilityProfile(orders) {
+    const scores = orders.map(o => o.fragilityAssessment?.score || 2);
+    
+    if (scores.length === 0) {
+      return {
+        average: 2,
+        max: 2,
+        min: 2,
+        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        hasExtremelyFragile: false,
+        hasFragile: false,
+        requiresPremiumHandling: false
+      };
+    }
+
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    scores.forEach(s => distribution[s] = (distribution[s] || 0) + 1);
+
+    return {
+      average: scores.reduce((a, b) => a + b, 0) / scores.length,
+      max: Math.max(...scores),
+      min: Math.min(...scores),
+      distribution,
+      hasExtremelyFragile: scores.includes(5),
+      hasFragile: scores.some(s => s >= 4),
+      requiresPremiumHandling: scores.some(s => s >= 4)
+    };
+  }
+
+  // NEW: Validate fragility arrangement
+  validateFragilityArrangement(loadPlan) {
+    const items = loadPlan.items;
+
+    for (const item of items) {
+      if (!item.position) continue;
+
+      const fragility = item.fragilityAssessment || assessOrderFragility(item);
+
+      // Check 1: Fragile items on top
+      if (fragility.score >= 4) {
+        const itemsAbove = items.filter(other => 
+          other.position && 
+          other.position.y > item.position.y &&
+          this.hasHorizontalOverlap(item, other)
+        );
+
+        if (itemsAbove.length > 0) {
+          loadPlan.warnings.push({
+            type: 'fragile_stacking_warning',
+            severity: fragility.score === 5 ? 'high' : 'medium',
+            message: `Fragile item ${item.id} has ${itemsAbove.length} item(s) stacked above`,
+            itemId: item.id,
+            fragilityScore: fragility.score
+          });
+        }
+      }
+
+      // Check 2: Stacking compatibility
+      if (item.position.y > 10) {
+        const itemsBelow = items.filter(other =>
+          other.position &&
+          other.position.y < item.position.y &&
+          this.hasHorizontalOverlap(item, other)
+        );
+
+        for (const belowItem of itemsBelow) {
+          const compatibility = checkStackingCompatibility(item, belowItem);
+          if (!compatibility.canStack) {
+            loadPlan.warnings.push({
+              type: 'stacking_incompatibility',
+              severity: compatibility.riskLevel,
+              message: compatibility.reason,
+              itemId: item.id,
+              belowItemId: belowItem.id
+            });
+          }
+
+          // Check packaging compatibility
+          const packCompat = checkPackagingCompatibility(
+            item.packagingType || 'corrugated_box',
+            belowItem.packagingType || 'corrugated_box'
+          );
+          if (!packCompat.compatible) {
+            loadPlan.warnings.push({
+              type: 'packaging_incompatibility',
+              severity: 'medium',
+              message: packCompat.reason,
+              itemId: item.id,
+              belowItemId: belowItem.id
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // NEW: Generate fragility-aware loading instructions
+  generateFragilityAwareInstructions(loadPlan) {
+    const sortedItems = [...loadPlan.items]
+      .filter(item => item.position)
+      .sort((a, b) => {
+        // Sort by loading order or position
+        if (a.loadingOrder !== undefined && b.loadingOrder !== undefined) {
+          return a.loadingOrder - b.loadingOrder;
+        }
+        if (a.position.y !== b.position.y) {
+          return a.position.y - b.position.y;
+        }
+        return a.position.x - b.position.x;
+      });
+
+    return sortedItems.map((item, index) => {
+      const fragility = item.fragilityAssessment || assessOrderFragility(item);
+      const instructions = [];
+
+      // Position instruction
+      instructions.push(this.getPositionDescription(item.position));
+
+      // Fragility-specific instructions
+      if (fragility.score >= 4) {
+        instructions.push('⚠️ FRAGILE - Handle with extreme care');
+      }
+      if (fragility.score === 5) {
+        instructions.push('⛔ DO NOT stack anything on top of this item');
+      }
+
+      // Get handling instructions from fragility profile
+      const handlingInstructions = getHandlingInstructions(
+        fragility.score,
+        fragility.profile ? { specialHandling: item.specialHandling } : null
+      );
+      instructions.push(...handlingInstructions);
+
+      return {
+        step: index + 1,
+        itemId: item.id,
+        seller: item.seller,
+        quantity: item.quantity || 1,
+        weight: item.weight * (item.quantity || 1),
+        fragility: {
+          score: fragility.score,
+          label: fragility.label,
+          color: fragility.color
+        },
+        instructions,
+        loadingPosition: item.loadingPosition || 'MIDDLE',
+        zone: this.determineLoadingZone(item)
+      };
+    });
+  }
+
+  // Helper: Get position description
+  getPositionDescription(position) {
+    if (!position) return 'Position not assigned';
+    
+    const xPos = position.x < this.vehicle.dimensions.length / 3 ? 'Back' :
+                 position.x > (2 * this.vehicle.dimensions.length) / 3 ? 'Front' : 'Middle';
+    const yPos = position.y < 500 ? 'Floor level' :
+                 position.y < 1200 ? 'Mid-height' : 'Upper level';
+    
+    return `Place at ${xPos.toLowerCase()}, ${yPos.toLowerCase()}`;
+  }
+
+  // Helper: Determine loading zone based on fragility
+  determineLoadingZone(item) {
+    const fragility = item.fragilityAssessment?.score || 2;
+    const weight = item.weight * (item.quantity || 1);
+
+    if (fragility >= 4) return 'PROTECTED';
+    if (fragility <= 2 && weight >= 20) return 'HEAVY_BASE';
+    if (item.dropSequence === 1) return 'DOOR_ACCESSIBLE';
+    return 'STANDARD';
+  }
+
+  // Helper: Check horizontal overlap between items
+  hasHorizontalOverlap(item1, item2) {
+    if (!item1.position || !item2.position) return false;
+    
+    const dims1 = this.getItemDimensions(item1);
+    const dims2 = this.getItemDimensions(item2);
+    
+    const overlapX = Math.max(0,
+      Math.min(item1.position.x + dims1.length, item2.position.x + dims2.length) -
+      Math.max(item1.position.x, item2.position.x)
+    );
+    const overlapZ = Math.max(0,
+      Math.min(item1.position.z + dims1.width, item2.position.z + dims2.width) -
+      Math.max(item1.position.z, item2.position.z)
+    );
+    
+    return overlapX > 0 && overlapZ > 0;
+  }
+
+  // Helper: Get item dimensions
+  getItemDimensions(item) {
+    if (item.materialType === 'cylindrical') {
+      const diameter = item.dimensions?.diameter || 300;
+      const height = item.dimensions?.height || 500;
+      if (item.orientation === 'horizontal') {
+        return { length: height, width: diameter, height: diameter };
+      }
+      return { length: diameter, width: diameter, height: height };
+    }
+    return {
+      length: item.dimensions?.length || 400,
+      width: item.dimensions?.width || 300,
+      height: item.dimensions?.height || 200
+    };
   }
 
   // Pack cuboidal items using 3D bin packing
@@ -341,11 +606,144 @@ export class LoadOptimizer {
     return { valid: true };
   }
 
-  // Validate loading sequence
+  // Validate loading sequence - ensures LIFO/FIFO compliance and physical accessibility
   validateLoadingSequence(loadPlan) {
-    // Check if loading sequence is physically possible
-    // This is a simplified check
-    return { valid: true };
+    const items = loadPlan.items.filter(item => item.position);
+    const issues = [];
+    
+    if (items.length === 0) {
+      return { valid: true, issues: [] };
+    }
+
+    // Sort items by their loading order
+    const orderedItems = [...items].sort((a, b) => 
+      (a.loadingOrder || 0) - (b.loadingOrder || 0)
+    );
+
+    // Check 1: LIFO compliance - items loaded last should be near the door (high X position)
+    if (this.constraints.loadingSequence === 'lifo') {
+      for (let i = 0; i < orderedItems.length - 1; i++) {
+        const currentItem = orderedItems[i];
+        const nextItem = orderedItems[i + 1];
+        
+        // Items loaded later should generally be at higher X (closer to door)
+        // Allow some tolerance for items at similar X positions
+        if (currentItem.position && nextItem.position) {
+          const xDiff = nextItem.position.x - currentItem.position.x;
+          
+          // If next item is significantly further back (lower X), that's a problem
+          if (xDiff < -500) { // 500mm tolerance
+            issues.push({
+              type: 'lifo_violation',
+              severity: 'medium',
+              message: `LIFO violation: Item ${nextItem.id} (loaded ${nextItem.loadingOrder}) is positioned behind item ${currentItem.id} (loaded ${currentItem.loadingOrder})`
+            });
+          }
+        }
+      }
+    }
+
+    // Check 2: Drop sequence compliance - first drop items should be near door
+    const itemsWithDropSequence = items.filter(item => item.dropSequence !== undefined);
+    if (itemsWithDropSequence.length > 1) {
+      const sortedByDrop = [...itemsWithDropSequence].sort((a, b) => 
+        (a.dropSequence || 999) - (b.dropSequence || 999)
+      );
+
+      for (let i = 0; i < sortedByDrop.length - 1; i++) {
+        const firstDrop = sortedByDrop[i];
+        const laterDrop = sortedByDrop[i + 1];
+        
+        if (firstDrop.position && laterDrop.position) {
+          // First drop should be at higher X (near door)
+          // Later drop should be further back (lower X)
+          if (firstDrop.position.x < laterDrop.position.x - 300) {
+            issues.push({
+              type: 'drop_sequence_violation',
+              severity: 'high',
+              message: `Drop sequence issue: ${firstDrop.id} (drop ${firstDrop.dropSequence}) is behind ${laterDrop.id} (drop ${laterDrop.dropSequence}) - will be harder to unload first`
+            });
+          }
+        }
+      }
+    }
+
+    // Check 3: Accessibility - items shouldn't be completely blocked
+    for (const item of items) {
+      if (!item.position) continue;
+      
+      const itemDims = this.getItemDimensions(item);
+      const blockingItems = items.filter(other => {
+        if (!other.position || other.id === item.id) return false;
+        
+        // Check if other item is between this item and the door (higher X)
+        // and overlaps in Y and Z
+        const isInFront = other.position.x > item.position.x + itemDims.length;
+        const yOverlap = !(other.position.y >= item.position.y + itemDims.height ||
+                          other.position.y + this.getItemDimensions(other).height <= item.position.y);
+        const zOverlap = !(other.position.z >= item.position.z + itemDims.width ||
+                          other.position.z + this.getItemDimensions(other).width <= item.position.z);
+        
+        return isInFront && yOverlap && zOverlap;
+      });
+
+      if (blockingItems.length > 0) {
+        // Check if blocked item is supposed to be unloaded before blocking items
+        const blockedDropSeq = item.dropSequence || 999;
+        const earlierBlockers = blockingItems.filter(b => 
+          (b.dropSequence || 999) > blockedDropSeq
+        );
+        
+        if (earlierBlockers.length > 0) {
+          issues.push({
+            type: 'accessibility_blocked',
+            severity: 'high',
+            message: `Item ${item.id} is blocked by ${earlierBlockers.map(b => b.id).join(', ')} but needs to be unloaded first`
+          });
+        }
+      }
+    }
+
+    // Check 4: Heavy items at bottom for loading sequence
+    const heavyItemsAboveLight = items.filter(item => {
+      if (!item.position || item.position.y < 100) return false; // On ground
+      
+      const itemWeight = item.weight * (item.quantity || 1);
+      const itemDims = this.getItemDimensions(item);
+      
+      // Find items directly below
+      const itemsBelow = items.filter(other => {
+        if (!other.position || other.id === item.id) return false;
+        
+        const otherDims = this.getItemDimensions(other);
+        const isBelow = other.position.y + otherDims.height <= item.position.y + 50; // 50mm tolerance
+        const xOverlap = !(other.position.x >= item.position.x + itemDims.length ||
+                          other.position.x + otherDims.length <= item.position.x);
+        const zOverlap = !(other.position.z >= item.position.z + itemDims.width ||
+                          other.position.z + otherDims.width <= item.position.z);
+        
+        return isBelow && xOverlap && zOverlap;
+      });
+
+      // Check if any item below is significantly lighter
+      return itemsBelow.some(below => {
+        const belowWeight = below.weight * (below.quantity || 1);
+        return itemWeight > belowWeight * 1.5; // 50% heavier is concerning
+      });
+    });
+
+    if (heavyItemsAboveLight.length > 0) {
+      issues.push({
+        type: 'weight_distribution',
+        severity: 'medium',
+        message: `${heavyItemsAboveLight.length} heavy item(s) placed above lighter items - may affect stability during transport`
+      });
+    }
+
+    return {
+      valid: issues.filter(i => i.severity === 'high').length === 0,
+      issues
+    };
   }
 
   // Validate cuboidal packing

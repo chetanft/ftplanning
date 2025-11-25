@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Clock, Truck, Route, AlertTriangle, Map } from 'lucide-react';
+import { getVehicleRouteInfo } from '../services/routeDistanceService';
 
 const RouteVisualization = ({ planData, googleMapsApiKey }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -85,9 +86,11 @@ const RouteVisualization = ({ planData, googleMapsApiKey }) => {
     if (!planData?.vehicles) return;
 
     const staticRoutes = planData.vehicles.map((vehicle, index) => {
-      // Calculate estimated distance and duration based on route(s)
-      const estimatedDistance = calculateMultiCityDistance(vehicle);
-      const estimatedDuration = estimatedDistance / 60; // Assume 60 km/h average speed
+      // Use the route distance service for accurate calculations
+      const routeInfo = getVehicleRouteInfo({
+        ...vehicle,
+        costPerKm: vehicle.vehicleType?.costPerKm || vehicle.costPerKm || 25
+      });
 
       return {
         vehicleId: vehicle.id,
@@ -95,9 +98,11 @@ const RouteVisualization = ({ planData, googleMapsApiKey }) => {
         orders: vehicle.orders || [],
         dropPoints: vehicle.dropPoints || [],
         optimizedOrder: [],
-        totalDistance: estimatedDistance,
-        totalDuration: estimatedDuration,
-        estimatedCost: estimatedDistance * (vehicle.costPerKm || 25),
+        totalDistance: routeInfo.distance,
+        totalDuration: routeInfo.duration,
+        estimatedCost: routeInfo.cost,
+        segments: routeInfo.segments,
+        routeSource: routeInfo.source,
         isStatic: true
       };
     });
@@ -105,126 +110,8 @@ const RouteVisualization = ({ planData, googleMapsApiKey }) => {
     setRouteData(staticRoutes);
   };
 
-  // Helper function to get route information from mock data
-  const getRouteInfo = (routeId) => {
-    const routes = {
-      'DEL-MUM': { distance: 1400, duration: 18 },
-      'DEL-HYD': { distance: 1500, duration: 20 },
-      'DEL-CHE': { distance: 2200, duration: 28 },
-      'DEL-BAN': { distance: 2100, duration: 26 }
-    };
-    return routes[routeId];
-  };
-
-  // Distance matrix between cities (approximate km)
-  const DISTANCE_MATRIX = {
-    'Delhi-Mumbai': 1400,
-    'Delhi-Hyderabad': 1500,
-    'Delhi-Chennai': 2200,
-    'Delhi-Bangalore': 2100,
-    'Mumbai-Hyderabad': 700,
-    'Mumbai-Chennai': 1300,
-    'Mumbai-Bangalore': 980,
-    'Hyderabad-Chennai': 625,
-    'Hyderabad-Bangalore': 570,
-    'Chennai-Bangalore': 350
-  };
-
-  // Get distance between two cities
-  const getDistanceBetweenCities = (city1, city2) => {
-    if (city1 === city2) return 0;
-    const key1 = `${city1}-${city2}`;
-    const key2 = `${city2}-${city1}`;
-    return DISTANCE_MATRIX[key1] || DISTANCE_MATRIX[key2] || 500;
-  };
-
-  // Extract city name from location string
-  const extractCityName = (location) => {
-    if (!location) return 'Unknown';
-    const parts = location.split(' ');
-    return parts[0] || 'Unknown';
-  };
-
-  // Get unique cities from drop points in order
-  const getUniqueCitiesInOrder = (dropPoints) => {
-    const uniqueCities = [];
-    const seenCities = new Set();
-
-    dropPoints.forEach(dp => {
-      const city = extractCityName(dp.location);
-      if (!seenCities.has(city)) {
-        uniqueCities.push(city);
-        seenCities.add(city);
-      }
-    });
-
-    return uniqueCities;
-  };
-
-  // Calculate optimal route distance using nearest neighbor heuristic
-  const calculateOptimalRouteDistance = (cities) => {
-    if (cities.length === 0) return 0;
-    if (cities.length === 1) return 0;
-
-    // Start from Delhi (origin)
-    let totalDistance = 0;
-    let currentCity = 'Delhi';
-    const remainingCities = [...cities];
-
-    // Visit each city in order of proximity (nearest neighbor)
-    while (remainingCities.length > 0) {
-      let nearestCity = remainingCities[0];
-      let minDistance = getDistanceBetweenCities(currentCity, nearestCity);
-      let nearestIndex = 0;
-
-      // Find nearest unvisited city
-      for (let i = 1; i < remainingCities.length; i++) {
-        const distance = getDistanceBetweenCities(currentCity, remainingCities[i]);
-        if (distance < minDistance) {
-          minDistance = distance;
-          nearestCity = remainingCities[i];
-          nearestIndex = i;
-        }
-      }
-
-      totalDistance += minDistance;
-      currentCity = nearestCity;
-      remainingCities.splice(nearestIndex, 1);
-    }
-
-    return totalDistance;
-  };
-
-  // Calculate distance for multi-city routes
-  const calculateMultiCityDistance = (vehicle) => {
-    // If single route, use predefined distance
-    if (vehicle.route && vehicle.route !== 'MIXED') {
-      const routeInfo = getRouteInfo(vehicle.route);
-      return routeInfo?.distance || 1000;
-    }
-
-    // For mixed routes, calculate based on drop points
-    if (vehicle.dropPoints && vehicle.dropPoints.length > 0) {
-      // Get unique cities in order of appearance
-      const cities = getUniqueCitiesInOrder(vehicle.dropPoints);
-
-      if (cities.length === 0) return 1000;
-      if (cities.length === 1) {
-        // Single city - use predefined distance if available
-        const city = cities[0];
-        if (city === 'Mumbai') return 1400;
-        if (city === 'Hyderabad') return 1500;
-        if (city === 'Chennai') return 2200;
-        if (city === 'Bangalore') return 2100;
-        return 1000;
-      }
-
-      // Multiple cities - calculate optimal route
-      return calculateOptimalRouteDistance(cities);
-    }
-
-    return 1000; // Default fallback
-  };
+  // Note: Distance calculations are now handled by routeDistanceService
+  // which provides accurate route distances based on actual city-to-city data
 
   const initializeMap = () => {
     if (!mapRef.current || !window.google) return;

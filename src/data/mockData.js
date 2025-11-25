@@ -39,12 +39,34 @@ export const routes = [
   }
 ];
 
-// Single vehicle type configuration - Eicher 14ft
-// This is the standard medium-duty truck used for most deliveries
+// Vehicle type configurations with specifications for different cargo needs
+// Includes fragility-handling capabilities for AI recommendations
 export const vehicleTypes = [
+  {
+    id: 'TATA_ACE',
+    name: 'Tata Ace',
+    category: 'mini',
+    maxWeight: 750, // kg
+    dimensions: {
+      length: 2100, // mm - 7 feet
+      width: 1520, // mm - 5 feet
+      height: 1520 // mm - 5 feet
+    },
+    volume: 4.9, // cubic meters
+    costPerKm: 8, // INR per kilometer
+    // Fragility handling capabilities
+    suspensionQuality: 2, // 1-5 scale (1=rough, 5=air-ride)
+    climateControl: false,
+    shockAbsorption: 2,
+    loadSecuring: ['straps', 'ropes'],
+    suitableFor: ['general', 'textiles', 'dry_food'],
+    notSuitableFor: ['glass', 'electronics_sensitive', 'pharma_sensitive'],
+    features: ['Quick delivery', 'Urban areas', 'Last mile']
+  },
   {
     id: 'EICHER_14FT',
     name: 'Eicher 14ft',
+    category: 'medium',
     maxWeight: 4500, // kg - 4.5 tons payload capacity
     dimensions: {
       length: 4270, // mm - 14 feet (4267mm actual)
@@ -52,13 +74,164 @@ export const vehicleTypes = [
       height: 2130 // mm - 7 feet (2134mm actual)
     },
     volume: 16.6, // cubic meters (calculated: 4.27 × 1.83 × 2.13 ≈ 16.6m³)
-    costPerKm: 18 // INR per kilometer
+    costPerKm: 18, // INR per kilometer
+    suspensionQuality: 3,
+    climateControl: false,
+    shockAbsorption: 3,
+    loadSecuring: ['straps', 'ropes', 'corner_protectors'],
+    suitableFor: ['general', 'fmcg', 'textiles', 'electronics_heavy'],
+    notSuitableFor: ['pharma_sensitive'],
+    features: ['Standard cargo', 'Medium distance', 'Versatile']
+  },
+  {
+    id: 'EICHER_17FT',
+    name: 'Eicher 17ft',
+    category: 'medium-large',
+    maxWeight: 7000, // kg - 7 tons payload capacity
+    dimensions: {
+      length: 5180, // mm - 17 feet
+      width: 2130, // mm - 7 feet
+      height: 2130 // mm - 7 feet
+    },
+    volume: 23.5, // cubic meters
+    costPerKm: 22, // INR per kilometer
+    suspensionQuality: 3,
+    climateControl: false,
+    shockAbsorption: 3,
+    loadSecuring: ['straps', 'ropes', 'corner_protectors', 'load_bars'],
+    suitableFor: ['general', 'fmcg', 'furniture', 'machinery'],
+    notSuitableFor: ['pharma_sensitive'],
+    features: ['Higher capacity', 'Medium-long distance']
+  },
+  {
+    id: 'CONTAINER_20FT',
+    name: '20ft Container Truck',
+    category: 'large',
+    maxWeight: 10000, // kg - 10 tons payload capacity
+    dimensions: {
+      length: 5900, // mm - 20 feet (internal)
+      width: 2350, // mm
+      height: 2390 // mm
+    },
+    volume: 33.2, // cubic meters
+    costPerKm: 28, // INR per kilometer
+    suspensionQuality: 3,
+    climateControl: false,
+    shockAbsorption: 3,
+    loadSecuring: ['straps', 'ropes', 'corner_protectors', 'load_bars', 'lashing_rings'],
+    suitableFor: ['general', 'heavy_machinery', 'bulk', 'palletized'],
+    notSuitableFor: ['pharma_sensitive', 'glass_bulk'],
+    features: ['Container shipping', 'Long distance', 'Port delivery']
+  },
+  {
+    id: 'CONTAINER_32FT',
+    name: '32ft Container Truck',
+    category: 'extra-large',
+    maxWeight: 15000, // kg - 15 tons payload capacity
+    dimensions: {
+      length: 9600, // mm - 32 feet (internal)
+      width: 2400, // mm
+      height: 2400 // mm
+    },
+    volume: 55.3, // cubic meters
+    costPerKm: 38, // INR per kilometer
+    suspensionQuality: 3,
+    climateControl: false,
+    shockAbsorption: 3,
+    loadSecuring: ['straps', 'ropes', 'corner_protectors', 'load_bars', 'lashing_rings'],
+    suitableFor: ['bulk', 'heavy_machinery', 'palletized', 'furniture_bulk'],
+    notSuitableFor: ['pharma_sensitive', 'glass_bulk', 'fragile_small'],
+    features: ['Maximum capacity', 'Long distance', 'Bulk shipments']
+  },
+  {
+    id: 'REFRIGERATED_14FT',
+    name: 'Reefer 14ft',
+    category: 'refrigerated',
+    maxWeight: 3500, // kg - reduced due to refrigeration unit
+    dimensions: {
+      length: 4000, // mm
+      width: 1800, // mm
+      height: 1800 // mm
+    },
+    volume: 13.0, // cubic meters (reduced due to insulation)
+    costPerKm: 32, // INR per kilometer (higher due to cooling)
+    suspensionQuality: 4,
+    climateControl: true,
+    temperatureRange: { min: -25, max: 25 }, // Celsius
+    shockAbsorption: 4,
+    loadSecuring: ['straps', 'corner_protectors', 'load_bars'],
+    suitableFor: ['pharma_standard', 'pharma_sensitive', 'food_perishable', 'cosmetics'],
+    notSuitableFor: ['heavy_machinery'],
+    features: ['Temperature controlled', 'Cold chain', 'Pharma compliant']
+  },
+  {
+    id: 'REFRIGERATED_20FT',
+    name: 'Reefer 20ft',
+    category: 'refrigerated-large',
+    maxWeight: 7000, // kg
+    dimensions: {
+      length: 5500, // mm
+      width: 2200, // mm
+      height: 2200 // mm
+    },
+    volume: 26.6, // cubic meters
+    costPerKm: 45, // INR per kilometer
+    suspensionQuality: 4,
+    climateControl: true,
+    temperatureRange: { min: -25, max: 25 },
+    shockAbsorption: 4,
+    loadSecuring: ['straps', 'corner_protectors', 'load_bars', 'thermal_blankets'],
+    suitableFor: ['pharma_standard', 'pharma_sensitive', 'food_perishable', 'dairy', 'vaccines'],
+    notSuitableFor: ['heavy_machinery', 'general_bulk'],
+    features: ['Large cold storage', 'Cold chain', 'Pharma compliant']
+  },
+  {
+    id: 'AIR_RIDE_20FT',
+    name: 'Air-Ride 20ft',
+    category: 'premium',
+    maxWeight: 8000, // kg
+    dimensions: {
+      length: 5900, // mm
+      width: 2350, // mm
+      height: 2390 // mm
+    },
+    volume: 33.2, // cubic meters
+    costPerKm: 40, // INR per kilometer (premium suspension)
+    suspensionQuality: 5, // Air-ride suspension
+    climateControl: false,
+    shockAbsorption: 5,
+    loadSecuring: ['straps', 'corner_protectors', 'load_bars', 'lashing_rings', 'air_bags'],
+    suitableFor: ['glass', 'electronics_consumer', 'ceramics', 'artwork', 'fragile_sensitive'],
+    notSuitableFor: [],
+    features: ['Air-ride suspension', 'Minimal vibration', 'Fragile goods specialist']
+  },
+  {
+    id: 'AIR_RIDE_REEFER',
+    name: 'Air-Ride Reefer',
+    category: 'premium-refrigerated',
+    maxWeight: 6000, // kg
+    dimensions: {
+      length: 5000, // mm
+      width: 2200, // mm
+      height: 2000 // mm
+    },
+    volume: 22.0, // cubic meters
+    costPerKm: 55, // INR per kilometer (premium)
+    suspensionQuality: 5,
+    climateControl: true,
+    temperatureRange: { min: -30, max: 25 },
+    shockAbsorption: 5,
+    loadSecuring: ['straps', 'corner_protectors', 'load_bars', 'thermal_blankets', 'air_bags'],
+    suitableFor: ['pharma_sensitive', 'vaccines', 'biologics', 'glass_perishable'],
+    notSuitableFor: ['heavy_machinery', 'bulk'],
+    features: ['Premium handling', 'Cold chain', 'Sensitive goods', 'Vaccine transport']
   }
 ];
 
 // Sample orders with realistic dimensions and weights
 // All values are validated to fit within Eicher 14ft capacity (4500kg, 16.6m³)
 // when properly distributed across multiple vehicles
+// Includes fragility scores (1-5) and packaging types for AI load planning
 export const sampleOrders = [
   {
     id: 'SO001',
@@ -80,7 +253,13 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'high',
-    status: 'unplanned'
+    status: 'unplanned',
+    // Fragility and packaging fields
+    fragilityScore: 2, // Durable
+    packagingType: 'corrugated_box',
+    materialProfile: 'FOOD_DRY',
+    crushResistance: 3,
+    loadBearingCapacity: 75 // kg that can be stacked on top
   },
   {
     id: 'SO002',
@@ -102,7 +281,12 @@ export const sampleOrders = [
     nesting: false,
     fragile: false,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 3,
+    packagingType: 'metal_drum',
+    materialProfile: 'LIQUID_STANDARD',
+    crushResistance: 4,
+    loadBearingCapacity: 100
   },
   {
     id: 'SO003',
@@ -124,7 +308,13 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'low',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 4, // Fragile - electronics
+    packagingType: 'foam_padded',
+    materialProfile: 'ELECTRONICS_CONSUMER',
+    crushResistance: 2,
+    loadBearingCapacity: 15,
+    specialHandling: ['anti-static', 'shock-absorbing']
   },
   {
     id: 'SO004',
@@ -145,7 +335,13 @@ export const sampleOrders = [
     nesting: true,
     fragile: true,
     priority: 'high',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 5, // Extremely fragile
+    packagingType: 'foam_padded',
+    materialProfile: 'GLASS_CONTAINERS',
+    crushResistance: 1,
+    loadBearingCapacity: 0, // Cannot stack on top
+    specialHandling: ['fragile-label', 'vertical-only']
   },
   {
     id: 'SO005',
@@ -166,7 +362,12 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 400,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 1, // Robust - heavy machinery parts
+    packagingType: 'wooden_crate',
+    materialProfile: 'MACHINERY',
+    crushResistance: 5,
+    loadBearingCapacity: 200
   },
   {
     id: 'SO006',
@@ -187,7 +388,15 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 4, // Fragile - pharmaceuticals
+    packagingType: 'corrugated_box',
+    materialProfile: 'PHARMA_STANDARD',
+    crushResistance: 2,
+    loadBearingCapacity: 20,
+    temperatureControlled: true,
+    requiredTemperature: 25, // Celsius
+    specialHandling: ['temperature-controlled', 'sealed']
   },
   {
     id: 'SO007',
@@ -208,7 +417,14 @@ export const sampleOrders = [
     nesting: false,
     fragile: false,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'unplanned',
+    fragilityScore: 3, // Moderate - liquids
+    packagingType: 'metal_drum',
+    materialProfile: 'LIQUID_HAZARDOUS',
+    crushResistance: 4,
+    loadBearingCapacity: 80,
+    hazardous: true,
+    specialHandling: ['leak-proof', 'upright-preferred']
   },
   // Additional 200 realistic orders
   {
@@ -2355,12 +2571,96 @@ export const stackingRules = {
     heavyBelowLight: true,
     fullCoverageBase: true,
     preventTipping: true,
-    maxOverhang: 0.1 // 10% overhang allowed
+    maxOverhang: 0.1, // 10% overhang allowed
+    fragilityRules: {
+      // Fragility score of item above -> max fragility score of item below
+      5: 0, // Extremely fragile: nothing can be stacked on top
+      4: 3, // Fragile: can be on items with fragility 3 or less
+      3: 2, // Moderate: can be on items with fragility 2 or less
+      2: 1, // Durable: can be on items with fragility 1
+      1: 1  // Robust: can be on robust items only (or any item as base)
+    }
   },
   cylindrical: {
     interlocking: true,
     preventRolling: true,
     useWedges: true,
-    avoidHorizontalStacking: true // for fragile items
+    avoidHorizontalStacking: true, // for fragile items
+    fragilityRules: {
+      5: 0,
+      4: 2,
+      3: 2,
+      2: 1,
+      1: 1
+    }
+  },
+  // Fragility-based zone assignment
+  loadingZones: {
+    PROTECTED: { // Top/center area - for fragile items
+      minFragility: 4,
+      maxWeight: 30, // kg per item
+      position: 'top-center'
+    },
+    STANDARD: { // Middle area - standard items
+      minFragility: 2,
+      maxFragility: 3,
+      position: 'middle'
+    },
+    HEAVY_BASE: { // Bottom area - heavy, robust items
+      maxFragility: 2,
+      minWeight: 20, // kg per item
+      position: 'bottom'
+    }
   }
 };
+
+// Fragility level definitions for UI reference
+export const fragilityLevels = [
+  { score: 1, label: 'Robust', description: 'Can withstand rough handling', color: '#22c55e' },
+  { score: 2, label: 'Durable', description: 'Normal handling acceptable', color: '#84cc16' },
+  { score: 3, label: 'Moderate', description: 'Standard care required', color: '#eab308' },
+  { score: 4, label: 'Fragile', description: 'Careful handling required', color: '#f97316' },
+  { score: 5, label: 'Extremely Fragile', description: 'Special handling only', color: '#ef4444' }
+];
+
+// Material profile quick reference for UI
+export const materialProfileOptions = [
+  { id: 'ELECTRONICS_CONSUMER', label: 'Consumer Electronics', fragilityScore: 4 },
+  { id: 'ELECTRONICS_HEAVY', label: 'Heavy Electronics (Appliances)', fragilityScore: 3 },
+  { id: 'GLASS_CONTAINERS', label: 'Glass Containers', fragilityScore: 5 },
+  { id: 'CERAMICS', label: 'Ceramics & Pottery', fragilityScore: 5 },
+  { id: 'LIQUID_STANDARD', label: 'Standard Liquids', fragilityScore: 3 },
+  { id: 'LIQUID_HAZARDOUS', label: 'Hazardous Liquids', fragilityScore: 4 },
+  { id: 'FOOD_DRY', label: 'Dry Food Products', fragilityScore: 2 },
+  { id: 'FOOD_PERISHABLE', label: 'Perishable Foods', fragilityScore: 4 },
+  { id: 'PHARMA_STANDARD', label: 'Standard Pharmaceuticals', fragilityScore: 3 },
+  { id: 'PHARMA_SENSITIVE', label: 'Sensitive Pharmaceuticals', fragilityScore: 5 },
+  { id: 'METAL_PARTS', label: 'Metal Parts & Components', fragilityScore: 1 },
+  { id: 'MACHINERY', label: 'Industrial Machinery', fragilityScore: 2 },
+  { id: 'TEXTILES', label: 'Textiles & Fabrics', fragilityScore: 1 },
+  { id: 'PAPER_PRODUCTS', label: 'Paper Products', fragilityScore: 2 },
+  { id: 'FURNITURE_WOOD', label: 'Wooden Furniture', fragilityScore: 3 },
+  { id: 'COSMETICS', label: 'Cosmetics & Personal Care', fragilityScore: 4 },
+  { id: 'GAS_CYLINDERS', label: 'Gas Cylinders', fragilityScore: 3 },
+  { id: 'GENERAL', label: 'General Goods', fragilityScore: 2 }
+];
+
+// Packaging type options for UI
+export const packagingTypeOptions = [
+  { id: 'corrugated_box', label: 'Corrugated Box', icon: '📦' },
+  { id: 'corrugated_box_heavy', label: 'Heavy-Duty Box', icon: '📦' },
+  { id: 'wooden_crate', label: 'Wooden Crate', icon: '🪵' },
+  { id: 'wooden_pallet', label: 'Wooden Pallet', icon: '🪵' },
+  { id: 'plastic_container', label: 'Plastic Container', icon: '🧊' },
+  { id: 'plastic_crate', label: 'Plastic Crate', icon: '🧊' },
+  { id: 'metal_drum', label: 'Metal Drum', icon: '🛢️' },
+  { id: 'metal_container', label: 'Metal Container', icon: '🗃️' },
+  { id: 'foam_padded', label: 'Foam-Padded Box', icon: '🧽' },
+  { id: 'bubble_wrapped', label: 'Bubble Wrapped', icon: '🫧' },
+  { id: 'shrink_wrap', label: 'Shrink Wrapped', icon: '🎁' },
+  { id: 'thermal_insulated', label: 'Thermal Insulated', icon: '❄️' },
+  { id: 'woven_sack', label: 'Woven Sack', icon: '👜' },
+  { id: 'paper_sack', label: 'Paper Sack', icon: '📄' },
+  { id: 'glass_carton', label: 'Glass Carton', icon: '🍾' },
+  { id: 'cylinder_cage', label: 'Cylinder Cage', icon: '🔒' }
+];

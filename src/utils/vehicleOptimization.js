@@ -112,13 +112,17 @@ export const generateVehicleSuggestions = (orders, vehicleTypes) => {
         const totalCost = (largestVehicle.costPerKm * largeVehiclesNeeded) +
                          (smallestVehicle.costPerKm * smallVehiclesNeeded);
 
-        // Calculate more accurate utilization for mixed loads
-        const largeVehicleUtil = Math.max(
-          (largeVehiclesNeeded * largestVehicle.maxWeight) / totalWeight * 100,
-          (largeVehiclesNeeded * largestVehicle.volume) / totalVolume * 100
-        );
+        // Calculate actual utilization for mixed loads
+        const totalCapacityWeight = (largestVehicle.maxWeight * largeVehiclesNeeded) + 
+                                   (smallestVehicle.maxWeight * smallVehiclesNeeded);
+        const totalCapacityVolume = (largestVehicle.volume * largeVehiclesNeeded) + 
+                                   (smallestVehicle.volume * smallVehiclesNeeded);
+        
+        const actualWeightUtil = (totalWeight / totalCapacityWeight) * 100;
+        const actualVolumeUtil = (totalVolume / totalCapacityVolume) * 100;
+        const avgUtilization = Math.max(actualWeightUtil, actualVolumeUtil);
 
-        const efficiencyScore = 85 - (totalCost / 10); // Penalize higher cost
+        const efficiencyScore = avgUtilization - (totalCost / 10); // Penalize higher cost
 
         suggestions.push({
           vehicles: [
@@ -126,9 +130,9 @@ export const generateVehicleSuggestions = (orders, vehicleTypes) => {
             { type: smallestVehicle.id, quantity: smallVehiclesNeeded }
           ],
           totalCost,
-          weightUtilization: 85, // Estimated average
-          volumeUtilization: 85, // Estimated average
-          efficiency: 85,
+          weightUtilization: actualWeightUtil,
+          volumeUtilization: actualVolumeUtil,
+          efficiency: avgUtilization,
           efficiencyScore,
           description: `Mixed: ${largeVehiclesNeeded}x ${largestVehicle.name} + ${smallVehiclesNeeded}x ${smallestVehicle.name}`,
           strategy: 'mixed'

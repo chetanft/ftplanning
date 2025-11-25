@@ -7,24 +7,35 @@ import ConstraintsPanel from './components/ConstraintsPanel';
 import TruckVisualization from './components/TruckVisualization';
 import RouteVisualization from './components/RouteVisualization';
 import CreatePlanPage from './components/CreatePlanPage';
+import PlansList from './components/PlansList';
 import ErrorBoundary from './components/ErrorBoundary';
 import { sampleOrders, vehicleTypes, routes } from './data/mockData';
 import { distributeOrdersAcrossVehicles, calculateOrderTotals } from './utils/vehicleOptimization';
 import { LoadOptimizer } from './utils/loadOptimization';
 import GoogleMapsService from './services/googleMapsService';
+import { getVehicleRouteInfo, calculatePlanCost } from './services/routeDistanceService';
 
 function App() {
   const [currentView, setCurrentView] = useState('orders');
+  const [orders, setOrders] = useState(sampleOrders);
   const [selectedOrders, setSelectedOrders] = useState([]);
+  // Initialize with empty plans array - no mock data
+  const [plans, setPlans] = useState([]);
   const [materialTypeModalOpen, setMaterialTypeModalOpen] = useState(false);
   const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
   const [planData, setPlanData] = useState(null);
   const [constraintsModalOpen, setConstraintsModalOpen] = useState(false);
   const [constraints, setConstraints] = useState({
-    priorities: ['all'],
-    dropPoints: 1,
+    // Optimization settings
+    optimizationPriority: 'all',
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    // Vehicle constraints
     maxWeight: 25000,
-    maxVolume: 38.5
+    maxVolume: 38.5,
+    // Legacy/derived
+    dropPoints: 1,
+    priorities: ['all']
   });
 
   // Google Maps API key - in production, this should be in environment variables
@@ -33,6 +44,21 @@ function App() {
   const googleMapsService = new GoogleMapsService(googleMapsApiKey);
 
 
+
+  const handleUpdateOrder = (orderId, updates) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId ? { ...order, ...updates } : order
+      )
+    );
+    
+    // Also update selected orders if they are modified
+    setSelectedOrders(prevSelected => 
+      prevSelected.map(order => 
+        order.id === orderId ? { ...order, ...updates } : order
+      )
+    );
+  };
 
   const handleCreatePlan = () => {
     if (selectedOrders.length === 0) {
@@ -55,7 +81,7 @@ function App() {
 
     if (autoSelectedTypes.length > 0) {
       setSelectedMaterialTypes(autoSelectedTypes);
-      setCurrentView('createplan');
+      setCurrentView('wizard');
     } else {
       // Set the auto-selected types before opening modal
       setSelectedMaterialTypes(autoSelectedTypes);
@@ -66,17 +92,17 @@ function App() {
   const handleMaterialTypeSelection = (types) => {
     setSelectedMaterialTypes(types);
     setMaterialTypeModalOpen(false);
-    setCurrentView('createplan');
+    setCurrentView('wizard');
   };
 
   const handleGeneratePlan = async (planConfig) => {
     // Enhanced plan generation with multiple vehicles using utility functions
     const { totalWeight, totalVolume } = calculateOrderTotals(selectedOrders);
 
-    // Configure route strategy options
+    // Use settings from constraints (Settings panel) with fallback to planConfig
     const routeOptions = {
-      routeStrategy: planConfig.routeStrategy || 'separate', // 'separate' or 'consolidate'
-      loadingSequence: planConfig.loadingSequence || 'lifo',
+      routeStrategy: constraints.routeStrategy || planConfig.routeStrategy || 'separate',
+      loadingSequence: constraints.loadingSequence || planConfig.loadingSequence || 'lifo',
       allowMixedRoutes: planConfig.allowMixedRoutes || false,
       dropPoints: planConfig.dropPoints || 1
     };
@@ -90,23 +116,31 @@ function App() {
       const loadOptimizer = new LoadOptimizer(vehicleSpec, constraints);
       const loadPlan = loadOptimizer.optimizeLoad(vehicle.orders);
 
+      // Get actual route info for this vehicle using the route distance service
+      const routeInfo = getVehicleRouteInfo({
+        ...vehicle,
+        costPerKm: vehicleSpec?.costPerKm
+      });
+
       return {
         ...vehicle,
         loadPlan,
-        optimizedPositions: loadPlan.items
+        optimizedPositions: loadPlan.items,
+        routeInfo: routeInfo // Include route details for display
       };
     });
 
-    // Calculate total cost based on actual routes and distances
-    const totalCost = optimizedVehicles.reduce((sum, vehicle) => {
-      const vehicleType = vehicleTypes.find(vt => vt.id === vehicle.type);
-      const routeInfo = routes.find(r => r.id === vehicle.route);
-      const distance = routeInfo?.distance || 1000; // Fallback to 1000km if route not found
-      return sum + (vehicleType?.costPerKm * distance);
-    }, 0);
+    // Calculate total cost using the route distance service (actual distances)
+    const planCostInfo = calculatePlanCost(
+      optimizedVehicles.map(v => ({
+        ...v,
+        costPerKm: vehicleTypes.find(vt => vt.id === v.type)?.costPerKm
+      }))
+    );
+    const totalCost = planCostInfo.totalCost;
 
     const generatedPlan = {
-      id: `PLAN_${Date.now()}`,
+      id: `PLAN-${String(plans.length + 1).padStart(3, '0')}`,
       orders: selectedOrders,
       materialTypes: selectedMaterialTypes,
       constraints: constraints,
@@ -117,18 +151,43 @@ function App() {
       loadingSequence: planConfig.loadingSequence,
       allowMixedRoutes: planConfig.allowMixedRoutes,
       totalCost: totalCost,
+      totalDistance: planCostInfo.totalDistance,
+      totalDuration: planCostInfo.totalDuration,
+      costBreakdown: planCostInfo.breakdown,
       totalWeight: totalWeight,
       totalVolume: totalVolume,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      status: 'Planned'
     };
 
     setPlanData(generatedPlan);
   };
 
+  const handlePublishPlan = () => {
+    // Add plan to plans list
+    if (planData) {
+      setPlans([planData, ...plans]);
+    }
+
+    // Update status of selected orders to 'planned'
+    const updatedOrders = orders.map(order => {
+      if (selectedOrders.some(selected => selected.id === order.id)) {
+        return { ...order, status: 'planned' };
+      }
+      return order;
+    });
+    
+    setOrders(updatedOrders);
+    alert('Plan published successfully!');
+    setSelectedOrders([]);
+    setPlanData(null);
+    setCurrentView('plans'); // Redirect to Plans List
+  };
+
   const navigation = [
     { id: 'orders', label: 'Order Intake', icon: Package },
-    { id: 'createplan', label: 'Create Plan', icon: Truck },
-    { id: 'reports', label: 'Reports', icon: FileText }
+    { id: 'plans', label: 'Plans', icon: FileText },
+    { id: 'reports', label: 'Reports', icon: BarChart3 }
   ];
 
   return (
@@ -197,9 +256,10 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {currentView === 'orders' && (
           <OrderIntake
-            orders={sampleOrders}
+            orders={orders}
             selectedOrders={selectedOrders}
             onOrderSelection={setSelectedOrders}
+            onUpdateOrder={handleUpdateOrder}
           />
         )}
 
@@ -208,6 +268,7 @@ function App() {
             <PlanCreation
               selectedOrders={selectedOrders}
               materialTypes={selectedMaterialTypes}
+              constraints={constraints}
               onGeneratePlan={handleGeneratePlan}
             />
           ) : (
@@ -227,12 +288,26 @@ function App() {
           )
         )}
 
-        {currentView === 'createplan' && (
+        {currentView === 'plans' && (
+          <PlansList 
+            plans={plans} 
+            onViewPlan={(plan) => {
+              setPlanData(plan);
+              // Currently we don't have a separate view mode for details, 
+              // could reuse wizard in read-only or just log it for now.
+              // For demo purposes, let's show the visualization view
+              setCurrentView('visualization');
+            }}
+          />
+        )}
+
+        {currentView === 'wizard' && (
           selectedOrders.length > 0 ? (
             <CreatePlanPage
               selectedOrders={selectedOrders}
               materialTypes={selectedMaterialTypes}
               onGeneratePlan={handleGeneratePlan}
+              onPublishPlan={handlePublishPlan}
               planData={planData}
               googleMapsApiKey={googleMapsApiKey}
             />

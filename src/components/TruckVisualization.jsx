@@ -1,14 +1,22 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box, Cylinder, Text } from '@react-three/drei';
-import { RotateCcw, Download, Eye, EyeOff, Move, BarChart3, AlertTriangle } from 'lucide-react';
+import { RotateCcw, Download, Eye, EyeOff, Move, BarChart3, AlertTriangle, Shield } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSequencePanel from './LoadingSequencePanel';
+import { assessOrderFragility, FRAGILITY_DESCRIPTIONS } from '../utils/fragilityScoring';
 
+// Fragility color palette
+const FRAGILITY_COLORS = {
+  1: '#22c55e', // Robust - Green
+  2: '#84cc16', // Durable - Lime
+  3: '#eab308', // Moderate - Yellow
+  4: '#f97316', // Fragile - Orange
+  5: '#ef4444'  // Extremely Fragile - Red
+};
 
-
-// 3D Item Component with Loading Order Label
-const Item3D = ({ item, position, onClick, isSelected, showLabels }) => {
+// 3D Item Component with Loading Order Label and Fragility Coloring
+const Item3D = ({ item, position, onClick, isSelected, showLabels, colorMode = 'fragility' }) => {
   const meshRef = useRef();
 
   useFrame((state) => {
@@ -18,8 +26,14 @@ const Item3D = ({ item, position, onClick, isSelected, showLabels }) => {
   });
 
   const getItemColor = (materialType, priority, loadingOrder) => {
+    // Color based on fragility when in fragility mode
+    if (colorMode === 'fragility') {
+      const fragilityAssessment = assessOrderFragility(item);
+      return FRAGILITY_COLORS[fragilityAssessment.score] || '#6b7280';
+    }
+
     // Color based on loading order for FILO visualization
-    if (loadingOrder) {
+    if (colorMode === 'loading' && loadingOrder) {
       if (loadingOrder === 1) return '#3B82F6'; // Blue - Load first (at back)
       if (item.loadingPosition === 'LAST') return '#10B981'; // Green - Load last (near door)
     }
@@ -145,7 +159,7 @@ const VehicleContainer = ({ vehicle, position, vehicleIndex }) => {
 };
 
 // Main 3D Scene Component
-const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVehicleId }) => {
+const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVehicleId, colorMode = 'fragility' }) => {
   // Filter vehicles based on selection
   const vehiclesToShow = selectedVehicleId === 'all'
     ? planData.vehicles || []
@@ -354,6 +368,7 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
           onClick={() => onItemSelect(item)}
           isSelected={selectedItem?.id === item.id}
           showLabels={showLabels}
+          colorMode={colorMode}
         />
       ))}
 
@@ -370,6 +385,7 @@ const TruckVisualization = ({ planData }) => {
   const [viewMode, setViewMode] = useState('3d');
   const [selectedVehicleId, setSelectedVehicleId] = useState('all');
   const [webglError, setWebglError] = useState(false);
+  const [colorMode, setColorMode] = useState('fragility'); // 'fragility' or 'priority'
 
   const handleItemSelect = (item) => {
     setSelectedItem(selectedItem?.id === item.id ? null : item);
@@ -533,6 +549,15 @@ const TruckVisualization = ({ planData }) => {
               </>
             )}
           </button>
+
+          {/* Color Mode Toggle */}
+          <button
+            onClick={() => setColorMode(colorMode === 'fragility' ? 'priority' : 'fragility')}
+            className={`btn-secondary flex items-center ${colorMode === 'fragility' ? 'bg-orange-100 text-orange-700' : ''}`}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            {colorMode === 'fragility' ? 'Fragility Colors' : 'Priority Colors'}
+          </button>
           <button onClick={resetView} className="btn-secondary flex items-center">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset View
@@ -600,8 +625,36 @@ const TruckVisualization = ({ planData }) => {
                       onItemSelect={handleItemSelect}
                       showLabels={showLabels}
                       selectedVehicleId={selectedVehicleId}
+                      colorMode={colorMode}
                     />
                   </Canvas>
+
+                  {/* Fragility Legend */}
+                  {colorMode === 'fragility' && (
+                    <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 rounded-lg p-3 shadow-lg">
+                      <div className="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Fragility Legend
+                      </div>
+                      <div className="flex space-x-2">
+                        {[
+                          { score: 1, label: 'Robust', color: FRAGILITY_COLORS[1] },
+                          { score: 2, label: 'Durable', color: FRAGILITY_COLORS[2] },
+                          { score: 3, label: 'Moderate', color: FRAGILITY_COLORS[3] },
+                          { score: 4, label: 'Fragile', color: FRAGILITY_COLORS[4] },
+                          { score: 5, label: 'V. Fragile', color: FRAGILITY_COLORS[5] }
+                        ].map(item => (
+                          <div key={item.score} className="flex flex-col items-center">
+                            <div 
+                              className="w-4 h-4 rounded"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-xs text-gray-600 mt-1">{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 3D Controls Overlay */}
                   <div className="absolute top-4 left-4 bg-white bg-opacity-90 rounded-lg p-3 text-xs text-gray-600">

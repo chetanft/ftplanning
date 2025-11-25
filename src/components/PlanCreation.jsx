@@ -2,8 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Truck, Package, MapPin, Weight, BarChart3, Plus, Minus, AlertTriangle, CheckCircle, Lightbulb, Navigation, ArrowRight } from 'lucide-react';
 import { vehicleTypes, routes } from '../data/mockData';
 import { generateVehicleSuggestions, calculateUtilization, calculateOrderTotals, groupOrdersByRoute, generateDropPoints, suggestRouteType } from '../utils/vehicleOptimization';
+import { getRouteDistance, calculateMultiCityRouteDistance } from '../services/routeDistanceService';
+import AIRecommendationsPanel from './AIRecommendationsPanel';
 
-const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
+const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constraints }) => {
   // Auto-suggestion algorithm using utility function
   const autoSuggestVehicles = useMemo(() =>
     generateVehicleSuggestions(selectedOrders, vehicleTypes),
@@ -19,12 +21,8 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
   };
 
   const [selectedVehicles, setSelectedVehicles] = useState(getInitialVehicleSelection());
-  const [optimizationPriorities, setOptimizationPriorities] = useState(['all']);
-  const [dropPoints, setDropPoints] = useState(1);
   const [showAutoSuggestions, setShowAutoSuggestions] = useState(false);
-  const [routeStrategy, setRouteStrategy] = useState('separate');
-  const [loadingSequence, setLoadingSequence] = useState('lifo');
-  const [allowMixedRoutes, setAllowMixedRoutes] = useState(false);
+  const [selectedAIVehicle, setSelectedAIVehicle] = useState(null); // Track AI-selected vehicle for visual feedback
 
   // Group orders by route
   const ordersByRoute = useMemo(() => {
@@ -34,10 +32,27 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
   // Calculate totals using utility function
   const totals = useMemo(() => calculateOrderTotals(selectedOrders), [selectedOrders]);
 
-  // Generate drop points preview based on current settings
+  // Derive drop points from unique delivery locations in selected orders
+  const derivedDropPoints = useMemo(() => {
+    const uniqueLocations = new Set();
+    selectedOrders.forEach(order => {
+      if (order.deliveryLocation) {
+        uniqueLocations.add(order.deliveryLocation);
+      } else if (order.route) {
+        // Fall back to route destination
+        const route = routes.find(r => r.id === order.route);
+        if (route?.destination) {
+          uniqueLocations.add(route.destination);
+        }
+      }
+    });
+    return Array.from(uniqueLocations);
+  }, [selectedOrders]);
+
+  // Generate drop points preview based on derived locations
   const dropPointsPreview = useMemo(() => {
-    return generateDropPoints(selectedOrders, dropPoints);
-  }, [selectedOrders, dropPoints]);
+    return generateDropPoints(selectedOrders, derivedDropPoints.length || 1);
+  }, [selectedOrders, derivedDropPoints]);
 
   // Get route type suggestion
   const routeTypeSuggestion = useMemo(() => {
@@ -51,68 +66,30 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
     }
   }, [selectedOrders]); // Only depend on selectedOrders to avoid infinite loop
 
-  // Log state changes for debugging
-  useEffect(() => {
-    console.log('Drop points updated:', dropPoints);
-  }, [dropPoints]);
-
-  useEffect(() => {
-    console.log('Drop points preview updated:', dropPointsPreview);
-  }, [dropPointsPreview]);
-
-  useEffect(() => {
-    console.log('Selected vehicles updated:', selectedVehicles);
-  }, [selectedVehicles]);
-
   // Calculate utilization for current selection using utility function
   const currentUtilization = useMemo(() =>
     calculateUtilization(selectedVehicles, selectedOrders, vehicleTypes),
     [selectedVehicles, selectedOrders]
   );
 
-  const handlePriorityToggle = (priority) => {
-    if (priority === 'all') {
-      setOptimizationPriorities(['all']);
-    } else {
-      const newPriorities = optimizationPriorities.includes(priority)
-        ? optimizationPriorities.filter(p => p !== priority && p !== 'all')
-        : [...optimizationPriorities.filter(p => p !== 'all'), priority];
-
-      setOptimizationPriorities(newPriorities.length === 0 ? ['all'] : newPriorities);
-    }
-  };
-
-  // Handler functions for vehicle selection
-  const handleVehicleAdd = (vehicleType) => {
-    const existingIndex = selectedVehicles.findIndex(sv => sv.type === vehicleType);
-    if (existingIndex >= 0) {
-      const updated = [...selectedVehicles];
-      updated[existingIndex].quantity += 1;
-      setSelectedVehicles(updated);
-    } else {
-      setSelectedVehicles([...selectedVehicles, { type: vehicleType, quantity: 1 }]);
-    }
-  };
-
-  const handleVehicleRemove = (vehicleType) => {
-    const existingIndex = selectedVehicles.findIndex(sv => sv.type === vehicleType);
-    if (existingIndex >= 0) {
-      const updated = [...selectedVehicles];
-      if (updated[existingIndex].quantity > 1) {
-        updated[existingIndex].quantity -= 1;
-      } else {
-        updated.splice(existingIndex, 1);
-      }
-      // Ensure at least one vehicle is selected (Eicher 14ft)
-      if (updated.length === 0) {
-        updated.push({ type: 'EICHER_14FT', quantity: 1 });
-      }
-      setSelectedVehicles(updated);
-    }
-  };
-
   const handleApplySuggestion = (suggestion) => {
     setSelectedVehicles(suggestion.vehicles);
+    setShowAutoSuggestions(false);
+  };
+
+  const handleApplyAIRecommendation = (recommendation) => {
+    console.log('Applying AI recommendation:', recommendation.vehicle.name, 'x', recommendation.vehicleCount);
+    
+    // Apply the recommended vehicle configuration
+    setSelectedVehicles([{ 
+      type: recommendation.vehicle.id, 
+      quantity: recommendation.vehicleCount 
+    }]);
+    
+    // Track the selected vehicle for visual feedback
+    setSelectedAIVehicle(recommendation.vehicle.id);
+    
+    // Close auto-suggestions if open
     setShowAutoSuggestions(false);
   };
 
@@ -123,30 +100,28 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
       return;
     }
 
-    // Check if we should use the suggested route type
-    let finalDropPoints = dropPoints;
-    let finalRouteStrategy = routeStrategy;
+    // Use derived drop points from order data
+    const dropPointCount = derivedDropPoints.length || 1;
+    
+    // Use route strategy from constraints (Settings panel)
+    let finalRouteStrategy = constraints?.routeStrategy || 'separate';
 
+    // If SPMD is suggested and multiple drop points detected, use consolidate strategy
     if (routeTypeSuggestion.suggestion === 'SPMD' &&
         routeTypeSuggestion.dropLocations &&
         routeTypeSuggestion.dropLocations.length > 1) {
-
-      // If SPMD is suggested and user has set drop points to match the suggestion
-      if (dropPoints === routeTypeSuggestion.dropLocations.length) {
-        finalRouteStrategy = 'consolidate'; // Use consolidated route strategy for multi-drop
-        console.log('Using suggested multi-drop route with', dropPoints, 'drop points');
-      }
+      finalRouteStrategy = 'consolidate';
     }
 
-    // Prepare plan configuration
+    // Prepare plan configuration using settings from constraints
     const planConfig = {
       vehicles: selectedVehicles,
-      priorities: optimizationPriorities,
-      dropPoints: finalDropPoints,
+      priorities: [constraints?.optimizationPriority || 'all'],
+      dropPoints: dropPointCount,
       materialTypes,
       routeStrategy: finalRouteStrategy,
-      loadingSequence,
-      allowMixedRoutes,
+      loadingSequence: constraints?.loadingSequence || 'lifo',
+      allowMixedRoutes: false,
       routeTypeSuggestion
     };
 
@@ -160,14 +135,6 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
     if (percentage > 70) return 'bg-green-500';
     return 'bg-blue-500';
   };
-
-  const priorities = [
-    { id: 'cost', label: 'Cost', icon: '💰' },
-    { id: 'volume', label: 'Volume', icon: '📦' },
-    { id: 'weight', label: 'Weight', icon: '⚖️' },
-    { id: 'route', label: 'Route', icon: '🗺️' },
-    { id: 'all', label: 'All (Balanced)', icon: '⚖️' }
-  ];
 
   return (
     <div className="space-y-6">
@@ -191,6 +158,16 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Plan Summary */}
         <div className="lg:col-span-2 space-y-6">
+          
+          {/* AI Recommendations */}
+          <AIRecommendationsPanel
+            orders={selectedOrders}
+            vehicleTypes={vehicleTypes}
+            selectedVehicle={selectedAIVehicle}
+            onSelectVehicle={setSelectedAIVehicle}
+            onApplyRecommendation={handleApplyAIRecommendation}
+          />
+
           {/* Freight Orders Summary */}
           <div className="card">
             <h3 className="text-lg font-semibold mb-4">Freight Orders Summary</h3>
@@ -270,9 +247,14 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
                 <div className="text-2xl font-bold text-gray-900">
                   ₹{selectedVehicles.reduce((total, sv) => {
                     const vehicle = vehicleTypes.find(v => v.id === sv.type);
-                    // Estimate based on average route distance of 1500km
-                    const estimatedDistance = 1500;
-                    return total + (vehicle?.costPerKm * sv.quantity * estimatedDistance || 0);
+                    // Calculate actual distance based on routes in selected orders
+                    const routeIds = [...new Set(selectedOrders.map(o => o.route))];
+                    const totalDistance = routeIds.reduce((sum, routeId) => {
+                      const dist = getRouteDistance(routeId);
+                      return sum + (dist || 1000); // Fallback only for unknown routes
+                    }, 0);
+                    const avgDistancePerRoute = routeIds.length > 0 ? totalDistance / routeIds.length : 1000;
+                    return total + (vehicle?.costPerKm * sv.quantity * avgDistancePerRoute || 0);
                   }, 0).toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-500">Est. Cost</div>
@@ -362,111 +344,8 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
           </div>
         </div>
 
-        {/* Right Column - Configuration */}
+        {/* Right Column - Plan Summary & Settings */}
         <div className="space-y-6">
-          {/* Vehicle Selection - Eicher 14ft Only */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Vehicle Configuration</h3>
-            {(() => {
-              const vehicle = vehicleTypes[0]; // Only Eicher 14ft available
-              const selectedVehicle = selectedVehicles.find(sv => sv.type === vehicle.id);
-              const quantity = selectedVehicle?.quantity || 1;
-
-              return (
-                <div className="p-4 border border-primary-500 bg-primary-50 rounded-lg">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <Truck className="h-5 w-5 text-primary-600 mr-2" />
-                        <div className="font-medium text-gray-900">{vehicle.name}</div>
-                      </div>
-
-                      {/* Vehicle specifications */}
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
-                        <div className="flex items-center">
-                          <Weight className="h-3 w-3 mr-1" />
-                          Max Weight: {vehicle.maxWeight/1000}T
-                        </div>
-                        <div className="flex items-center">
-                          <Package className="h-3 w-3 mr-1" />
-                          Volume: {vehicle.volume}m³
-                        </div>
-                        <div>
-                          L×W×H: {(vehicle.dimensions.length/1000).toFixed(2)}×{(vehicle.dimensions.width/1000).toFixed(2)}×{(vehicle.dimensions.height/1000).toFixed(2)}m
-                        </div>
-                        <div>
-                          Cost: ₹{vehicle.costPerKm}/km
-                        </div>
-                      </div>
-
-                      {/* Per vehicle utilization */}
-                      <div className="mt-2 p-2 bg-white rounded border">
-                        <div className="text-xs text-gray-600 mb-1">
-                          Per Vehicle Utilization:
-                        </div>
-                        <div className="flex space-x-4 text-xs">
-                          <div>
-                            Weight: {((totals.totalWeight / (vehicle.maxWeight * quantity)) * 100).toFixed(1)}%
-                          </div>
-                          <div>
-                            Volume: {((totals.totalVolume / (vehicle.volume * quantity)) * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vehicle quantity controls */}
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary-200">
-                    <div className="text-sm font-medium text-gray-900">
-                      Number of Vehicles:
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => handleVehicleRemove(vehicle.id)}
-                        disabled={quantity <= 1}
-                        className="btn-secondary p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-lg font-bold w-12 text-center">
-                        {quantity}
-                      </span>
-                      <button
-                        onClick={() => handleVehicleAdd(vehicle.id)}
-                        className="btn-secondary p-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Optimization Priorities */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Optimization Priorities</h3>
-            <div className="space-y-2">
-              {priorities.map(priority => (
-                <label
-                  key={priority.id}
-                  className="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={optimizationPriorities.includes(priority.id)}
-                    onChange={() => handlePriorityToggle(priority.id)}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 mr-3"
-                  />
-                  <span className="mr-2">{priority.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{priority.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           {/* Route Type Suggestion */}
           {routeTypeSuggestion.suggestion === 'SPMD' && (
             <div className="card bg-blue-50 border-blue-200">
@@ -493,174 +372,91 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan }) => {
                       Confidence: {routeTypeSuggestion.confidence}%
                     </div>
                   </div>
-
-                  <div className="mt-3 text-sm">
-                    <p>Set drop points to {routeTypeSuggestion.dropLocations.length} to use this route.</p>
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Drop Points */}
+          {/* Delivery Locations (Read-Only) */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Drop Points</h3>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => {
-                  const newValue = Math.max(1, dropPoints - 1);
-                  console.log('Decreasing drop points to:', newValue);
-                  setDropPoints(newValue);
-                }}
-                className="btn-secondary p-2"
-                aria-label="Decrease drop points"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-gray-900">{dropPoints}</div>
-                <div className="text-sm text-gray-500">Drop Points</div>
-              </div>
-              <button
-                onClick={() => {
-                  const newValue = dropPoints + 1;
-                  console.log('Increasing drop points to:', newValue);
-                  setDropPoints(newValue);
-                }}
-                className="btn-secondary p-2"
-                aria-label="Increase drop points"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Navigation className="h-5 w-5 text-gray-400 mr-2" />
+              Delivery Locations
+            </h3>
+            <div className="text-center mb-4">
+              <div className="text-3xl font-bold text-gray-900">{derivedDropPoints.length || 1}</div>
+              <div className="text-sm text-gray-500">Drop {derivedDropPoints.length === 1 ? 'Point' : 'Points'}</div>
             </div>
-
-            {/* Drop Points Preview */}
-            <div className="mt-4">
-              <div className="text-sm font-medium text-gray-700 mb-2">
-                Drop Points Preview ({dropPointsPreview.length})
-              </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {dropPointsPreview.map((dp, index) => (
-                  <div key={dp.id} className="p-2 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center">
-                      <Navigation className="h-4 w-4 text-gray-400 mr-2" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700">{dp.location}</div>
-                        <div className="text-xs text-gray-500">
-                          {dp.orders.length} orders • {dp.route}
-                        </div>
+            
+            {/* Drop Points List */}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {dropPointsPreview.map((dp) => (
+                <div key={dp.id} className="p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 text-primary-500 mr-2" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">{dp.location}</div>
+                      <div className="text-xs text-gray-500">
+                        {dp.orders.length} orders • {dp.route}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-2 text-xs text-gray-500">
-              Multiple drop points allow for more granular delivery planning
+            <div className="mt-3 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              Drop points are automatically derived from selected orders
             </div>
           </div>
 
           {/* Material Types */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Material Types</h3>
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Package className="h-5 w-5 text-gray-400 mr-2" />
+              Material Types
+            </h3>
             <div className="space-y-2">
               {materialTypes && materialTypes.length > 0 ? (
                 materialTypes.map(type => (
                   <div key={type} className="flex items-center p-2 bg-gray-50 rounded">
-                    <Package className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm font-medium text-gray-700 capitalize">{type}</span>
                   </div>
                 ))
               ) : (
                 <div className="text-sm text-gray-500 p-2">
-                  No material types selected. This will be determined automatically.
+                  Determined automatically from selected orders
                 </div>
               )}
             </div>
           </div>
 
-          {/* Route Strategy */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Route Strategy</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle Assignment Strategy
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="routeStrategy"
-                      value="separate"
-                      checked={routeStrategy === 'separate'}
-                      onChange={(e) => setRouteStrategy(e.target.value)}
-                      className="text-primary-600 focus:ring-primary-500 mr-3"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-700">Separate Vehicles per Route</div>
-                      <div className="text-xs text-gray-500">Different vehicles for different routes</div>
-                    </div>
-                  </label>
-                  <label className="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="routeStrategy"
-                      value="consolidate"
-                      checked={routeStrategy === 'consolidate'}
-                      onChange={(e) => setRouteStrategy(e.target.value)}
-                      className="text-primary-600 focus:ring-primary-500 mr-3"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-700">Consolidate Routes</div>
-                      <div className="text-xs text-gray-500">Club orders from different routes</div>
-                    </div>
-                  </label>
-                </div>
+          {/* Current Settings Summary */}
+          <div className="card bg-gray-50">
+            <h3 className="text-lg font-semibold mb-4">Plan Settings</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Route Strategy:</span>
+                <span className="font-medium text-gray-900 capitalize">
+                  {constraints?.routeStrategy === 'consolidate' ? 'Consolidate Routes' : 'Separate Vehicles'}
+                </span>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loading Sequence
-                </label>
-                <select
-                  value={loadingSequence}
-                  onChange={(e) => setLoadingSequence(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="lifo">LIFO (Last In, First Out)</option>
-                  <option value="fifo">FIFO (First In, First Out)</option>
-                  <option value="route">Route-based sequence</option>
-                  <option value="weight">Weight-based sequence</option>
-                  <option value="priority">Priority-based sequence</option>
-                </select>
-                <div className="text-xs text-gray-500 mt-1">
-                  {loadingSequence === 'lifo' && 'Heavy items loaded first (unloaded last)'}
-                  {loadingSequence === 'fifo' && 'Light items loaded first (unloaded first)'}
-                  {loadingSequence === 'route' && 'Maintain original order'}
-                  {loadingSequence === 'weight' && 'Heaviest items first'}
-                  {loadingSequence === 'priority' && 'High priority items first'}
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Loading Sequence:</span>
+                <span className="font-medium text-gray-900 uppercase">
+                  {constraints?.loadingSequence || 'LIFO'}
+                </span>
               </div>
-
-              {routeStrategy === 'consolidate' && (
-                <div>
-                  <label className="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={allowMixedRoutes}
-                      onChange={(e) => setAllowMixedRoutes(e.target.checked)}
-                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 mr-3"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-700">Allow Mixed Routes</div>
-                      <div className="text-xs text-gray-500">Allow orders from different routes in same vehicle</div>
-                    </div>
-                  </label>
-                </div>
-              )}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Optimization:</span>
+                <span className="font-medium text-gray-900 capitalize">
+                  {constraints?.optimizationPriority === 'all' ? 'Balanced' : constraints?.optimizationPriority || 'Balanced'}
+                </span>
+              </div>
             </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Configure these settings in the Settings panel
+            </p>
           </div>
         </div>
       </div>

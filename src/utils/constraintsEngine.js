@@ -1,7 +1,10 @@
 /**
  * Advanced Constraints Engine
- * Handles complex loading and safety constraints
+ * Handles complex loading and safety constraints including fragility and packaging
  */
+
+import { assessOrderFragility, checkStackingCompatibility, getMaxLoadBearing } from './fragilityScoring.js';
+import { checkPackagingCompatibility, getPackagingType } from './packagingTypes.js';
 
 export class ConstraintsEngine {
   constructor(vehicleSpecs, materialRules = {}) {
@@ -27,6 +30,19 @@ export class ConstraintsEngine {
         separateTypes: false, // allow mixing of types
         bufferZone: 50 // mm buffer between different types
       },
+      // Fragility-based rules
+      fragility: {
+        enableFragilityChecks: true,
+        maxFragilityOnTop: 5, // Max fragility score for top items
+        protectedZoneMinHeight: 0.6, // Normalized height for protected zone
+        loadBearingBuffer: 0.9 // Safety factor for load bearing
+      },
+      // Packaging compatibility rules
+      packaging: {
+        enablePackagingChecks: true,
+        minCompatibilityScore: 0, // Minimum compatibility score (0 = neutral)
+        requireCompatibleStacking: true
+      },
       ...materialRules
     };
   }
@@ -34,6 +50,7 @@ export class ConstraintsEngine {
   // Validate item placement against all constraints
   validatePlacement(item, position, existingItems = []) {
     const violations = [];
+    const warnings = [];
 
     // Basic boundary constraints
     const boundaryCheck = this.checkBoundaryConstraints(item, position);
@@ -65,11 +82,291 @@ export class ConstraintsEngine {
       violations.push(safetyCheck);
     }
 
+    // NEW: Fragility constraints
+    if (this.materialRules.fragility?.enableFragilityChecks) {
+      const fragilityCheck = this.checkFragilityConstraints(item, position, existingItems);
+      if (!fragilityCheck.valid) {
+        if (fragilityCheck.severity === 'warning') {
+          warnings.push(fragilityCheck);
+        } else {
+          violations.push(fragilityCheck);
+        }
+      }
+    }
+
+    // NEW: Packaging compatibility constraints
+    if (this.materialRules.packaging?.enablePackagingChecks) {
+      const packagingCheck = this.checkPackagingConstraints(item, position, existingItems);
+      if (!packagingCheck.valid) {
+        if (packagingCheck.severity === 'warning') {
+          warnings.push(packagingCheck);
+        } else {
+          violations.push(packagingCheck);
+        }
+      }
+    }
+
+    // NEW: Load bearing capacity constraints
+    const loadBearingCheck = this.checkLoadBearingConstraints(item, position, existingItems);
+    if (!loadBearingCheck.valid) {
+      violations.push(loadBearingCheck);
+    }
+
     return {
       valid: violations.length === 0,
       violations,
-      score: this.calculatePlacementScore(item, position, existingItems)
+      warnings,
+      score: this.calculatePlacementScore(item, position, existingItems),
+      fragilityAssessment: this.getItemFragilityAssessment(item)
     };
+  }
+
+  // NEW: Check fragility-based constraints
+  checkFragilityConstraints(item, position, existingItems) {
+    const fragility = assessOrderFragility(item);
+    const rules = this.materialRules.fragility;
+
+    // Check 1: Extremely fragile items should not have items stacked on top
+    if (fragility.score === 5) {
+      const itemsAbove = this.getItemsAbove(item, position, existingItems);
+      if (itemsAbove.length > 0) {
+        return {
+          valid: false,
+          type: 'fragility_stacking_violation',
+          severity: 'high',
+          message: `Extremely fragile item ${item.id} cannot have items stacked on top`,
+          fragilityScore: fragility.score
+        };
+      }
+    }
+
+    // Check 2: Fragile items should be placed in protected zone (upper area)
+    if (fragility.score >= 4) {
+      const normalizedHeight = position.y / this.vehicle.dimensions.height;
+      if (normalizedHeight < 0.3 && existingItems.length > 2) {
+        return {
+          valid: false,
+          type: 'fragile_position_warning',
+          severity: 'warning',
+          message: `Fragile item ${item.id} placed low - consider protected zone placement`,
+          fragilityScore: fragility.score
+        };
+      }
+    }
+
+    // Check 3: Fragility stacking compatibility with items below
+    if (position.y > 10) {
+      const itemsBelow = this.getItemsBelow(position, existingItems);
+      for (const belowItem of itemsBelow) {
+        const compatibility = checkStackingCompatibility(item, belowItem);
+        if (!compatibility.canStack) {
+          return {
+            valid: false,
+            type: 'fragility_compatibility_violation',
+            severity: compatibility.riskLevel === 'high' ? 'high' : 'medium',
+            message: compatibility.reason,
+            fragilityScore: fragility.score,
+            itemId: item.id,
+            belowItemId: belowItem.id
+          };
+        }
+      }
+    }
+
+    // Check 4: Heavy items should not be above fragile items
+    const itemsBelow = this.getItemsBelow(position, existingItems);
+    for (const belowItem of itemsBelow) {
+      const belowFragility = assessOrderFragility(belowItem);
+      if (belowFragility.score >= 4) {
+        const itemWeight = item.weight * (item.quantity || 1);
+        const maxLoad = getMaxLoadBearing(belowFragility.score, belowItem.weight);
+        
+        if (itemWeight > maxLoad * rules.loadBearingBuffer) {
+          return {
+            valid: false,
+            type: 'fragile_overload_violation',
+            severity: 'high',
+            message: `Item ${item.id} (${itemWeight}kg) exceeds load bearing capacity of fragile item ${belowItem.id} (max: ${maxLoad.toFixed(1)}kg)`,
+            fragilityScore: belowFragility.score
+          };
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+
+  // NEW: Check packaging compatibility constraints
+  checkPackagingConstraints(item, position, existingItems) {
+    const itemPackaging = item.packagingType || 'corrugated_box';
+    const packaging = getPackagingType(itemPackaging);
+    const rules = this.materialRules.packaging;
+
+    // Check 1: Item packaging allows stacking
+    if (position.y > 10 && !packaging.stackability.canBeStacked) {
+      return {
+        valid: false,
+        type: 'packaging_stacking_violation',
+        severity: 'high',
+        message: `${packaging.label} packaging should not be stacked on other items`
+      };
+    }
+
+    // Check 2: Items below allow stacking on top
+    const itemsBelow = this.getItemsBelow(position, existingItems);
+    for (const belowItem of itemsBelow) {
+      const belowPackaging = belowItem.packagingType || 'corrugated_box';
+      const belowPackagingType = getPackagingType(belowPackaging);
+
+      if (!belowPackagingType.stackability.canStackOn) {
+        return {
+          valid: false,
+          type: 'packaging_support_violation',
+          severity: 'high',
+          message: `Cannot stack on ${belowPackagingType.label} - it should not have items on top`
+        };
+      }
+
+      // Check compatibility score
+      const compatibility = checkPackagingCompatibility(itemPackaging, belowPackaging);
+      if (!compatibility.compatible) {
+        return {
+          valid: false,
+          type: 'packaging_compatibility_violation',
+          severity: compatibility.score < -1 ? 'high' : 'medium',
+          message: compatibility.reason
+        };
+      }
+
+      if (compatibility.score < rules.minCompatibilityScore) {
+        return {
+          valid: false,
+          type: 'packaging_low_compatibility',
+          severity: 'warning',
+          message: `Low packaging compatibility: ${compatibility.reason}`
+        };
+      }
+    }
+
+    // Check 3: Weight limits based on packaging
+    if (position.y > 10) {
+      const itemWeight = item.weight * (item.quantity || 1);
+      for (const belowItem of itemsBelow) {
+        const belowPackaging = getPackagingType(belowItem.packagingType || 'corrugated_box');
+        const maxStackWeight = belowPackaging.stackability.maxStackWeight;
+
+        if (itemWeight > maxStackWeight) {
+          return {
+            valid: false,
+            type: 'packaging_weight_exceeded',
+            severity: 'medium',
+            message: `Item weight (${itemWeight}kg) exceeds ${belowPackaging.label} max stack weight (${maxStackWeight}kg)`
+          };
+        }
+      }
+    }
+
+    return { valid: true };
+  }
+
+  // NEW: Check load bearing capacity constraints
+  checkLoadBearingConstraints(item, position, existingItems) {
+    if (position.y <= 10) {
+      return { valid: true }; // On floor, no load bearing issues
+    }
+
+    const itemWeight = item.weight * (item.quantity || 1);
+    const itemsBelow = this.getItemsBelow(position, existingItems);
+
+    for (const belowItem of itemsBelow) {
+      // Get load bearing capacity
+      let loadBearingCapacity = belowItem.loadBearingCapacity;
+      
+      if (loadBearingCapacity === undefined) {
+        const fragility = assessOrderFragility(belowItem);
+        loadBearingCapacity = getMaxLoadBearing(fragility.score, belowItem.weight);
+      }
+
+      // Calculate current load on this item
+      const currentLoad = this.calculateLoadOnItem(belowItem, existingItems);
+      const remainingCapacity = loadBearingCapacity - currentLoad;
+
+      if (itemWeight > remainingCapacity) {
+        return {
+          valid: false,
+          type: 'load_bearing_exceeded',
+          severity: 'high',
+          message: `Item ${item.id} (${itemWeight}kg) exceeds remaining capacity of ${belowItem.id} (${remainingCapacity.toFixed(1)}kg available of ${loadBearingCapacity}kg)`
+        };
+      }
+    }
+
+    return { valid: true };
+  }
+
+  // Helper: Calculate current load on an item
+  calculateLoadOnItem(item, existingItems) {
+    if (!item.position) return 0;
+
+    let totalLoad = 0;
+    const itemDims = this.getItemDimensions(item);
+
+    existingItems.forEach(other => {
+      if (!other.position || other.id === item.id) return;
+      
+      // Check if other item is directly above
+      if (other.position.y > item.position.y) {
+        const otherDims = this.getItemDimensions(other);
+        
+        // Check horizontal overlap
+        const overlapX = Math.max(0,
+          Math.min(item.position.x + itemDims.length, other.position.x + otherDims.length) -
+          Math.max(item.position.x, other.position.x)
+        );
+        const overlapZ = Math.max(0,
+          Math.min(item.position.z + itemDims.width, other.position.z + otherDims.width) -
+          Math.max(item.position.z, other.position.z)
+        );
+
+        if (overlapX > 0 && overlapZ > 0) {
+          // Proportional weight based on overlap
+          const overlapRatio = (overlapX * overlapZ) / (otherDims.length * otherDims.width);
+          totalLoad += (other.weight * (other.quantity || 1)) * overlapRatio;
+        }
+      }
+    });
+
+    return totalLoad;
+  }
+
+  // Helper: Get items above a position
+  getItemsAbove(item, position, existingItems) {
+    const itemDims = this.getItemDimensions(item);
+    
+    return existingItems.filter(other => {
+      if (!other.position) return false;
+      
+      // Check if above
+      if (other.position.y <= position.y + itemDims.height) return false;
+      
+      // Check horizontal overlap
+      const otherDims = this.getItemDimensions(other);
+      const overlapX = Math.max(0,
+        Math.min(position.x + itemDims.length, other.position.x + otherDims.length) -
+        Math.max(position.x, other.position.x)
+      );
+      const overlapZ = Math.max(0,
+        Math.min(position.z + itemDims.width, other.position.z + otherDims.width) -
+        Math.max(position.z, other.position.z)
+      );
+
+      return overlapX > 0 && overlapZ > 0;
+    });
+  }
+
+  // Helper: Get fragility assessment for item
+  getItemFragilityAssessment(item) {
+    return assessOrderFragility(item);
   }
 
   // Check if item fits within vehicle boundaries
