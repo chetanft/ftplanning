@@ -224,6 +224,7 @@ const calculateSizeConsistencyScore = (order, selectedOrders) => {
 };
 
 const getRecommendationQuality = (score) => {
+    // Colors match Tailwind: green-500, lime-500, yellow-500, red-500
     if (score >= 85) {
         return {
             label: 'Excellent Fit',

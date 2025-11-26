@@ -577,6 +577,7 @@ export class StackingOptimizer {
    * Note: icon field is kept for backward compatibility but should use Lucide icons in components
    */
   getStabilityRating(score) {
+    // Colors match Tailwind: green-500, lime-500, yellow-500, red-500
     if (score >= 90) return { label: 'Excellent', color: '#22c55e', iconName: 'CheckCircle' };
     if (score >= 75) return { label: 'Good', color: '#84cc16', iconName: 'ThumbsUp' };
     if (score >= 60) return { label: 'Fair', color: '#eab308', iconName: 'AlertTriangle' };
@@ -641,10 +642,11 @@ export class StackingOptimizer {
    * Get layer color based on average fragility
    */
   getLayerColor(avgFragility) {
-    if (avgFragility >= 4) return '#fee2e2'; // Red tint for fragile
-    if (avgFragility >= 3) return '#fef9c3'; // Yellow tint for moderate
-    if (avgFragility >= 2) return '#ecfccb'; // Light green for durable
-    return '#dcfce7'; // Green for robust
+    // Colors match Tailwind: red-50, yellow-50, lime-50, green-50
+    if (avgFragility >= 4) return '#fee2e2'; // red-50 - Red tint for fragile
+    if (avgFragility >= 3) return '#fef9c3'; // yellow-50 - Yellow tint for moderate
+    if (avgFragility >= 2) return '#ecfccb'; // lime-50 - Light green for durable
+    return '#dcfce7'; // green-50 - Green for robust
   }
 
   // Helper methods

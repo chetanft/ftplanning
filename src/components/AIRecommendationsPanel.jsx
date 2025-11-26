@@ -90,12 +90,12 @@ const AIRecommendationsPanel = ({
     </div>
   );
 
-  // Get color based on score
+  // Get color based on score - matches Tailwind colors
   const getScoreColor = (score) => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 60) return '#84cc16';
-    if (score >= 40) return '#eab308';
-    return '#ef4444';
+    if (score >= 80) return '#22c55e'; // green-500
+    if (score >= 60) return '#84cc16'; // lime-500
+    if (score >= 40) return '#eab308'; // yellow-500
+    return '#ef4444'; // red-500
   };
 
   // Render vehicle recommendation card

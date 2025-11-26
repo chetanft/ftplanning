@@ -13,12 +13,13 @@ export const FRAGILITY_LEVELS = {
 };
 
 // Fragility level descriptions
+// Colors match Tailwind's color palette: green-500, lime-500, yellow-500, orange-500, red-500
 export const FRAGILITY_DESCRIPTIONS = {
-  1: { label: 'Robust', description: 'Heavy-duty items that can withstand rough handling', color: '#22c55e', bgColor: '#dcfce7' },
-  2: { label: 'Durable', description: 'Standard items with good structural integrity', color: '#84cc16', bgColor: '#ecfccb' },
-  3: { label: 'Moderate', description: 'Items requiring standard care during handling', color: '#eab308', bgColor: '#fef9c3' },
-  4: { label: 'Fragile', description: 'Delicate items requiring careful handling', color: '#f97316', bgColor: '#ffedd5' },
-  5: { label: 'Extremely Fragile', description: 'Very delicate items requiring special handling', color: '#ef4444', bgColor: '#fee2e2' }
+  1: { label: 'Robust', description: 'Heavy-duty items that can withstand rough handling', color: '#22c55e', bgColor: '#dcfce7' }, // green-500, green-50
+  2: { label: 'Durable', description: 'Standard items with good structural integrity', color: '#84cc16', bgColor: '#ecfccb' }, // lime-500, lime-50
+  3: { label: 'Moderate', description: 'Items requiring standard care during handling', color: '#eab308', bgColor: '#fef9c3' }, // yellow-500, yellow-50
+  4: { label: 'Fragile', description: 'Delicate items requiring careful handling', color: '#f97316', bgColor: '#ffedd5' }, // orange-500, orange-50
+  5: { label: 'Extremely Fragile', description: 'Very delicate items requiring special handling', color: '#ef4444', bgColor: '#fee2e2' } // red-500, red-50
 };
 
 // Fragility factors that contribute to overall score

@@ -16,11 +16,6 @@ export default {
         primary: {
   				DEFAULT: 'hsl(var(--primary))',
   				foreground: 'hsl(var(--primary-foreground))',
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
         },
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
@@ -46,27 +41,6 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))',
-          50: '#f0fdf4',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))',
-          50: '#fffbeb',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-        },
-        danger: { // Keeping for backward compatibility but mapped to destructive
-          50: '#fef2f2',
-          500: '#ef4444',
-          600: '#dc2626',
-        }
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

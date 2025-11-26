@@ -53,7 +53,7 @@ const CreatePlanPage = ({
   // Plan Options State
   const [showPlanOptions, setShowPlanOptions] = useState(false);
   const [planOptions, setPlanOptions] = useState({
-    loadPriorityStrategy: 'balanced',
+    loadPriorityStrategy: 'route-optimized',
     stackLogic: 'lifo',
     enforcePackagingCompatibility: true,
     fragilityBuffer: 10,
@@ -140,7 +140,7 @@ const CreatePlanPage = ({
         section: 'packaging' // Default to packaging section for stackable warnings
       };
     }
-    
+
     // Pattern: "Orders missing fragility scores: SO010. Default scores will be applied."
     // Also handles: "Orders missing fragility scores: SO010, SO011. Default scores will be applied."
     // And: "5 orders missing fragility scores: SO010, SO011 and 3 more. Default scores will be applied."
@@ -156,7 +156,7 @@ const CreatePlanPage = ({
         section: 'fragility'
       };
     }
-    
+
     // Pattern: "Orders missing packaging type: SO010. Default packaging will be assumed."
     // Also handles multiple orders
     const missingPackagingMatch = warning.match(/Orders missing packaging type:\s*([A-Z0-9]+(?:,\s*[A-Z0-9]+)*(?:\s+and\s+\d+\s+more)?)/);
@@ -170,7 +170,7 @@ const CreatePlanPage = ({
         section: 'packaging'
       };
     }
-    
+
     // Pattern: "Route DEL-CHE: Multiple pickup locations..."
     const routeMatch = warning.match(/Route\s+([A-Z-]+):/);
     if (routeMatch) {
@@ -180,7 +180,7 @@ const CreatePlanPage = ({
         warning: warning
       };
     }
-    
+
     return {
       type: 'unknown',
       warning: warning
@@ -190,7 +190,7 @@ const CreatePlanPage = ({
   // Handle edit button click
   const handleEditWarning = (warning) => {
     const parsed = parseWarning(warning);
-    
+
     if (parsed.type === 'order' && parsed.orderId) {
       const order = selectedOrders.find(o => o.id === parsed.orderId);
       if (order) {
@@ -366,7 +366,7 @@ const CreatePlanPage = ({
             <div className="w-full bg-secondary rounded-full h-2.5 mb-6">
               <div
                 className={`h-2.5 rounded-full transition-all duration-300 ${validationStatus === 'error' ? 'bg-destructive' :
-                  validationStatus === 'warning' ? 'bg-warning' : 'bg-primary'
+                  validationStatus === 'warning' ? 'bg-amber-500' : 'bg-primary'
                   }`}
                 style={{ width: `${validationProgress}%` }}
               />
@@ -380,8 +380,8 @@ const CreatePlanPage = ({
                 return (
                   <div key={stage.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div className="flex items-center">
-                      {status === 'passed' && <CheckCircle className="text-success h-5 w-5 mr-3" />}
-                      {status === 'warning' && <AlertCircle className="text-warning h-5 w-5 mr-3" />}
+                      {status === 'passed' && <CheckCircle className="text-green-600 h-5 w-5 mr-3" />}
+                      {status === 'warning' && <AlertCircle className="text-amber-600 h-5 w-5 mr-3" />}
                       {status === 'error' && <AlertTriangle className="text-destructive h-5 w-5 mr-3" />}
                       {status === 'pending' && (
                         validationStatus === 'validating'
@@ -390,8 +390,8 @@ const CreatePlanPage = ({
                       )}
                       <span className={isComplete ? "" : "text-muted-foreground"}>{stage.label}</span>
                     </div>
-                    {status === 'passed' && <Badge variant="success">Passed</Badge>}
-                    {status === 'warning' && <Badge variant="warning">Warnings</Badge>}
+                    {status === 'passed' && <Badge className="bg-green-500 text-white">Passed</Badge>}
+                    {status === 'warning' && <Badge className="bg-amber-500 text-white">Warnings</Badge>}
                     {status === 'error' && <Badge variant="destructive">Failed</Badge>}
                   </div>
                 );
@@ -430,17 +430,17 @@ const CreatePlanPage = ({
         </Card>
 
         {validationWarnings.length > 0 && (validationStatus === 'success' || validationStatus === 'warning') && (
-          <Card className="border-warning/50 bg-warning/10">
+          <Card className="border-amber-200 bg-amber-50">
             <CardContent className="p-4">
               <div className="flex items-start">
-                <AlertCircle className="h-5 w-5 text-warning mt-0.5 mr-3 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
                 <div className="flex-1">
                   <h3 className="font-medium">Warnings ({validationWarnings.length})</h3>
                   <ul className="list-none text-sm text-muted-foreground mt-2 space-y-2 max-h-40 overflow-y-auto">
                     {validationWarnings.map((warning, i) => {
                       const parsed = parseWarning(warning);
                       const canEdit = parsed.type === 'order' || parsed.type === 'missing_fragility' || parsed.type === 'missing_packaging';
-                      
+
                       return (
                         <li key={i} className="flex items-start justify-between gap-2">
                           <span className="flex-1">{warning}</span>
@@ -577,10 +577,10 @@ const CreatePlanPage = ({
         )}
 
         {generationStatus === 'success' && (
-          <Card className="border-success/50 bg-success/10">
+          <Card className="border-green-200 bg-green-50">
             <CardContent className="p-8 flex flex-col items-center">
-              <div className="h-16 w-16 bg-success/20 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="h-8 w-8 text-success" />
+              <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
               <h3 className="text-xl font-bold mb-2">Plan Generated Successfully!</h3>
               <p className="text-muted-foreground mb-6">Your plan is ready for review and publishing.</p>
@@ -633,7 +633,7 @@ const CreatePlanPage = ({
             <Button variant="outline">Edit Parameters</Button>
             <Button
               onClick={onPublishPlan}
-              variant="success"
+              className="bg-green-500 text-white hover:bg-green-600"
             >
               Publish Plan
             </Button>
@@ -726,16 +726,16 @@ const CreatePlanPage = ({
           <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-secondary -z-10"></div>
 
           {/* Step 1 */}
-          <div className={`flex flex-col items-center ${currentStep === 'validate' ? 'text-primary' : (['generate', 'review'].includes(currentStep) ? 'text-success' : 'text-muted-foreground')}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-background border-2 ${currentStep === 'validate' ? 'border-primary' : (['generate', 'review'].includes(currentStep) ? 'border-success bg-success/10' : 'border-muted-foreground/30')}`}>
+          <div className={`flex flex-col items-center ${currentStep === 'validate' ? 'text-primary' : (['generate', 'review'].includes(currentStep) ? 'text-green-600' : 'text-muted-foreground')}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-background border-2 ${currentStep === 'validate' ? 'border-primary' : (['generate', 'review'].includes(currentStep) ? 'border-green-500 bg-green-50' : 'border-muted-foreground/30')}`}>
               {['generate', 'review'].includes(currentStep) ? <CheckCircle className="h-6 w-6" /> : <span>1</span>}
             </div>
             <span className="mt-2 text-sm font-medium bg-background px-2">Validation</span>
           </div>
 
           {/* Step 2 */}
-          <div className={`flex flex-col items-center ${currentStep === 'generate' ? 'text-primary' : (currentStep === 'review' ? 'text-success' : 'text-muted-foreground')}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-background border-2 ${currentStep === 'generate' ? 'border-primary' : (currentStep === 'review' ? 'border-success bg-success/10' : 'border-muted-foreground/30')}`}>
+          <div className={`flex flex-col items-center ${currentStep === 'generate' ? 'text-primary' : (currentStep === 'review' ? 'text-green-600' : 'text-muted-foreground')}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-background border-2 ${currentStep === 'generate' ? 'border-primary' : (currentStep === 'review' ? 'border-green-500 bg-green-50' : 'border-muted-foreground/30')}`}>
               {currentStep === 'review' ? <CheckCircle className="h-6 w-6" /> : <span>2</span>}
             </div>
             <span className="mt-2 text-sm font-medium bg-background px-2">Plan Generation</span>
@@ -788,7 +788,7 @@ const CreatePlanPage = ({
               </DrawerClose>
             </div>
           </DrawerHeader>
-          
+
           <div className="p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
             {editingOrder && (
               <FragilityPanel

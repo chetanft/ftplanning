@@ -114,11 +114,11 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
         { name: 'Fragility zone conflict', count: 2, percentage: 8 }
       ],
       rejectionReasons: [
-        { name: 'Business constraints', value: 35, color: '#EF4444' },
-        { name: 'Route preferences', value: 27, color: '#F97316' },
-        { name: 'Cost considerations', value: 18, color: '#EAB308' },
-        { name: 'Vehicle availability', value: 12, color: '#22C55E' },
-        { name: 'Other', value: 8, color: '#6B7280' }
+        { name: 'Business constraints', value: 35, color: '#ef4444' }, // red-500
+        { name: 'Route preferences', value: 27, color: '#f97316' }, // orange-500
+        { name: 'Cost considerations', value: 18, color: '#eab308' }, // yellow-500
+        { name: 'Vehicle availability', value: 12, color: '#22c55e' }, // green-500
+        { name: 'Other', value: 8, color: '#6b7280' } // gray-500
       ]
     };
   }, [plans]);
@@ -627,8 +627,8 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   type="monotone"
                   dataKey="volume"
                   stackId="1"
-                  stroke="#3B82F6"
-                  fill="#3B82F6"
+                  stroke="#3b82f6" // blue-500
+                  fill="#3b82f6"
                   fillOpacity={0.6}
                   name="Volume Utilization (%)"
                 />
@@ -636,8 +636,8 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   type="monotone"
                   dataKey="weight"
                   stackId="2"
-                  stroke="#10B981"
-                  fill="#10B981"
+                  stroke="#10b981" // emerald-500
+                  fill="#10b981"
                   fillOpacity={0.6}
                   name="Weight Utilization (%)"
                 />
@@ -682,7 +682,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   yAxisId="right"
                   type="monotone"
                   dataKey="planningTime"
-                  stroke="#F97316"
+                  stroke="#f97316" // orange-500
                   strokeWidth={2}
                   name="Planning Time (min)"
                 />
@@ -730,7 +730,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   yAxisId="right"
                   type="monotone"
                   dataKey="damagedRate"
-                  stroke="#EF4444"
+                  stroke="#ef4444" // red-500
                   strokeWidth={2}
                   name="Damaged Rate (%)"
                 />
@@ -758,8 +758,8 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   type="monotone"
                   dataKey="aiPlans"
                   stackId="1"
-                  stroke="#3B82F6"
-                  fill="#3B82F6"
+                  stroke="#3b82f6" // blue-500
+                  fill="#3b82f6"
                   fillOpacity={0.8}
                   name="AI Plans (%)"
                 />
@@ -767,8 +767,8 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   type="monotone"
                   dataKey="manualPlans"
                   stackId="1"
-                  stroke="#E5E7EB"
-                  fill="#E5E7EB"
+                  stroke="#e5e7eb" // gray-200
+                  fill="#e5e7eb"
                   fillOpacity={0.8}
                   name="Manual Plans (%)"
                 />
@@ -794,7 +794,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={120} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#EF4444" name="Count" />
+                <Bar dataKey="count" fill="#ef4444" name="Count" /> {/* red-500 */}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -817,7 +817,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
                   labelLine={false}
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={100}
-                  fill="#8884d8"
+                  fill="#8884d8" // purple (chart library default)
                   dataKey="value"
                 >
                   {chartData.rejectionReasons.map((entry, index) => (

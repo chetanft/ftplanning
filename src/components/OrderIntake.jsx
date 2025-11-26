@@ -392,8 +392,8 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
   const getPriorityBadgeVariant = (priority) => {
     switch (priority) {
       case 'high': return 'destructive';
-      case 'medium': return 'warning';
-      case 'low': return 'success';
+      case 'medium': return 'bg-amber-500 text-white';
+      case 'low': return 'bg-green-500 text-white';
       default: return 'secondary';
     }
   };
@@ -401,7 +401,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
   const getFragilityBadgeVariant = (score) => {
     switch(score) {
       case 5: return 'destructive';
-      case 4: return 'warning'; // orange-ish
+      case 4: return 'bg-amber-500 text-white'; // orange-ish
       default: return 'secondary';
     }
   };
@@ -740,7 +740,12 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                       </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getFragilityBadgeVariant(fragility.score)}>
+                        <Badge 
+                          {...(getFragilityBadgeVariant(fragility.score).includes('bg-') 
+                            ? { className: getFragilityBadgeVariant(fragility.score) }
+                            : { variant: getFragilityBadgeVariant(fragility.score) }
+                          )}
+                        >
                         {fragility.score}/5 {fragility.label}
                         </Badge>
                       </TableCell>
@@ -761,7 +766,12 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                       </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getPriorityBadgeVariant(order.priority)} className="capitalize">
+                        <Badge 
+                          {...(getPriorityBadgeVariant(order.priority).includes('bg-') 
+                            ? { className: `${getPriorityBadgeVariant(order.priority)} capitalize` }
+                            : { variant: getPriorityBadgeVariant(order.priority), className: "capitalize" }
+                          )}
+                        >
                         {order.priority}
                         </Badge>
                       </TableCell>

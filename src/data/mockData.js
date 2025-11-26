@@ -5489,11 +5489,11 @@ export const stackingRules = {
 
 // Fragility level definitions for UI reference
 export const fragilityLevels = [
-  { score: 1, label: 'Robust', description: 'Can withstand rough handling', color: '#22c55e' },
-  { score: 2, label: 'Durable', description: 'Normal handling acceptable', color: '#84cc16' },
-  { score: 3, label: 'Moderate', description: 'Standard care required', color: '#eab308' },
-  { score: 4, label: 'Fragile', description: 'Careful handling required', color: '#f97316' },
-  { score: 5, label: 'Extremely Fragile', description: 'Special handling only', color: '#ef4444' }
+  { score: 1, label: 'Robust', description: 'Can withstand rough handling', color: '#22c55e' }, // green-500
+  { score: 2, label: 'Durable', description: 'Normal handling acceptable', color: '#84cc16' }, // lime-500
+  { score: 3, label: 'Moderate', description: 'Standard care required', color: '#eab308' }, // yellow-500
+  { score: 4, label: 'Fragile', description: 'Careful handling required', color: '#f97316' }, // orange-500
+  { score: 5, label: 'Extremely Fragile', description: 'Special handling only', color: '#ef4444' } // red-500
 ];
 
 // Material profile quick reference for UI

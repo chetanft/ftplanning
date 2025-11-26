@@ -271,7 +271,8 @@ const RouteVisualization = ({ planData, googleMapsApiKey }) => {
   };
 
   const getVehicleColor = (index) => {
-    const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
+    // Colors match Tailwind: blue-500, red-500, emerald-500, amber-500, violet-500, pink-500
+    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
     return colors[index % colors.length];
   };
 

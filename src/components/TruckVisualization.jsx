@@ -6,13 +6,13 @@ import ErrorBoundary from './ErrorBoundary';
 import LoadingSequencePanel from './LoadingSequencePanel';
 import { assessOrderFragility, FRAGILITY_DESCRIPTIONS } from '../utils/fragilityScoring';
 
-// Fragility color palette
+// Fragility color palette - matches Tailwind colors
 const FRAGILITY_COLORS = {
-  1: '#22c55e', // Robust - Green
-  2: '#84cc16', // Durable - Lime
-  3: '#eab308', // Moderate - Yellow
-  4: '#f97316', // Fragile - Orange
-  5: '#ef4444'  // Extremely Fragile - Red
+  1: '#22c55e', // green-500 - Robust
+  2: '#84cc16', // lime-500 - Durable
+  3: '#eab308', // yellow-500 - Moderate
+  4: '#f97316', // orange-500 - Fragile
+  5: '#ef4444'  // red-500 - Extremely Fragile
 };
 
 // 3D Item Component with Loading Order Label and Fragility Coloring
@@ -29,20 +29,20 @@ const Item3D = ({ item, position, onClick, isSelected, showLabels, colorMode = '
     // Color based on fragility when in fragility mode
     if (colorMode === 'fragility') {
       const fragilityAssessment = assessOrderFragility(item);
-      return FRAGILITY_COLORS[fragilityAssessment.score] || '#6b7280';
+      return FRAGILITY_COLORS[fragilityAssessment.score] || '#6b7280'; // gray-500 fallback
     }
 
     // Color based on loading order for FILO visualization
     if (colorMode === 'loading' && loadingOrder) {
-      if (loadingOrder === 1) return '#3B82F6'; // Blue - Load first (at back)
-      if (item.loadingPosition === 'LAST') return '#10B981'; // Green - Load last (near door)
+      if (loadingOrder === 1) return '#3b82f6'; // blue-500 - Load first (at back)
+      if (item.loadingPosition === 'LAST') return '#10b981'; // emerald-500 - Load last (near door)
     }
 
     // Fallback to priority-based colors
     if (materialType === 'cylindrical') {
-      return priority === 'high' ? '#EF4444' : priority === 'medium' ? '#F59E0B' : '#10B981';
+      return priority === 'high' ? '#ef4444' : priority === 'medium' ? '#f59e0b' : '#10b981'; // red-500, amber-500, emerald-500
     }
-    return priority === 'high' ? '#DC2626' : priority === 'medium' ? '#D97706' : '#059669';
+    return priority === 'high' ? '#dc2626' : priority === 'medium' ? '#d97706' : '#059669'; // red-600, amber-600, emerald-600
   };
 
   const loadingOrder = item.loadingOrder;
@@ -119,9 +119,9 @@ const VehicleContainer = ({ vehicle, position, vehicleIndex }) => {
     height: 2590
   };
 
-  // Get vehicle color based on index
+  // Get vehicle color based on index - matches Tailwind colors
   const getVehicleColor = (index) => {
-    const colors = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5A2B'];
+    const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5a2b']; // violet-500, blue-500, emerald-500, amber-500, red-500, brown
     return colors[index % colors.length];
   };
 

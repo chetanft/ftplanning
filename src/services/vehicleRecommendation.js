@@ -450,6 +450,7 @@ export class VehicleRecommendationEngine {
    * Get match quality label
    */
   getMatchQuality(score) {
+    // Colors match Tailwind: green-500, lime-500, yellow-500, red-500
     if (score >= 85) return { label: 'Excellent', color: '#22c55e' };
     if (score >= 70) return { label: 'Good', color: '#84cc16' };
     if (score >= 50) return { label: 'Fair', color: '#eab308' };

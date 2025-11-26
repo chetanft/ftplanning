@@ -21,7 +21,7 @@ import {
  */
 const PlanOptionsPanel = ({ options, onOptionsChange }) => {
   const [localOptions, setLocalOptions] = useState(options || {
-    loadPriorityStrategy: 'balanced',
+    loadPriorityStrategy: 'route-optimized',
     stackLogic: 'lifo',
     enforcePackagingCompatibility: true,
     fragilityBuffer: 10,
@@ -43,35 +43,35 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
 
   // Load Priority Strategies
   const loadPriorityStrategies = [
-    { 
-      value: 'fragility', 
-      label: 'Fragility-First', 
+    {
+      value: 'fragility',
+      label: 'Fragility-First',
       description: 'Prioritize fragile items for protected zones',
       icon: Shield
     },
-    { 
-      value: 'weight', 
-      label: 'Weight-First', 
+    {
+      value: 'weight',
+      label: 'Weight-First',
       description: 'Heaviest items loaded first (bottom)',
       icon: Scale
     },
-    { 
-      value: 'route', 
-      label: 'Route-First', 
+    {
+      value: 'route',
+      label: 'Route-First',
       description: 'Organize by delivery route sequence',
       icon: MapPin
     },
-    { 
-      value: 'cost', 
-      label: 'Cost-First', 
+    {
+      value: 'cost',
+      label: 'Cost-First',
       description: 'Minimize overall transportation cost',
       icon: DollarSign
     },
-    { 
-      value: 'balanced', 
-      label: 'Balanced', 
-      description: 'AI optimizes all factors equally',
-      icon: TrendingUp
+    {
+      value: 'route-optimized',
+      label: 'Route Optimiser',
+      description: 'Minimize total distance traveled',
+      icon: MapPin
     }
   ];
 
@@ -85,13 +85,13 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
   const vehicleTypeOptions = [
     // Auto selection
     { value: 'auto', label: 'AI Auto-Select', description: 'Let AI choose optimal vehicles', category: 'auto', icon: Bot },
-    
+
     // Size categories
     { value: 'small', label: 'Small (LCV)', description: 'Tata Ace and similar', category: 'category', icon: Truck },
     { value: 'medium', label: 'Medium (SCV)', description: 'Eicher 14ft/17ft', category: 'category', icon: Truck },
     { value: 'large', label: 'Large (HCV)', description: 'Containers 20ft/32ft', category: 'category', icon: Container },
     { value: 'mixed', label: 'Mixed Fleet', description: 'Allow any combination', category: 'category', icon: Truck },
-    
+
     // Specific vehicles
     { value: 'TATA_ACE', label: 'Tata Ace', description: 'Mini truck (1.5T)', category: 'specific', icon: Truck },
     { value: 'EICHER_14FT', label: 'Eicher 14ft', description: 'Medium truck (7T)', category: 'specific', icon: Truck },
@@ -130,30 +130,29 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               {loadPriorityStrategies.map((strategy) => {
                 const Icon = strategy.icon;
                 return (
-                <label
-                  key={strategy.value}
-                  className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
-                    localOptions.loadPriorityStrategy === strategy.value
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-muted-foreground/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="loadPriorityStrategy"
-                    value={strategy.value}
-                    checked={localOptions.loadPriorityStrategy === strategy.value}
-                    onChange={(e) => handleOptionChange('loadPriorityStrategy', e.target.value)}
-                    className="mt-1 mr-3"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center">
+                  <label
+                    key={strategy.value}
+                    className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${localOptions.loadPriorityStrategy === strategy.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-muted-foreground/50'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="loadPriorityStrategy"
+                      value={strategy.value}
+                      checked={localOptions.loadPriorityStrategy === strategy.value}
+                      onChange={(e) => handleOptionChange('loadPriorityStrategy', e.target.value)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center">
                         <Icon className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="text-sm font-medium">{strategy.label}</span>
-                    </div>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{strategy.description}</p>
-                  </div>
-                </label>
+                    </div>
+                  </label>
                 );
               })}
             </CardContent>
@@ -171,11 +170,10 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               {stackLogicOptions.map((option) => (
                 <label
                   key={option.value}
-                  className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
-                    localOptions.stackLogic === option.value
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-muted-foreground/50'
-                  }`}
+                  className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${localOptions.stackLogic === option.value
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-muted-foreground/50'
+                    }`}
                 >
                   <input
                     type="radio"
@@ -251,20 +249,20 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            
-            {localOptions.vehicleTypeOverride !== 'auto' && (
+
+              {localOptions.vehicleTypeOverride !== 'auto' && (
                 <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div className="text-sm">
+                  <div className="text-sm">
                     <span className="font-medium">Selected: </span>
                     <span>
-                    {vehicleTypeOptions.find(o => o.value === localOptions.vehicleTypeOverride)?.label || localOptions.vehicleTypeOverride}
-                  </span>
-                </div>
+                      {vehicleTypeOptions.find(o => o.value === localOptions.vehicleTypeOverride)?.label || localOptions.vehicleTypeOverride}
+                    </span>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                  Only this vehicle type will be used for plan generation
-                </p>
-              </div>
-            )}
+                    Only this vehicle type will be used for plan generation
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -280,65 +278,65 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-            {/* Weight Utilization */}
+              {/* Weight Utilization */}
               <div>
-              <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2">
                   <Label>Max Weight Utilization</Label>
                   <span className="text-sm font-bold text-primary">{localOptions.maxWeightUtilization}%</span>
-              </div>
+                </div>
                 <Input
-                type="range"
-                value={localOptions.maxWeightUtilization}
-                min={70}
-                max={100}
-                onChange={(e) => handleOptionChange('maxWeightUtilization', Number(e.target.value))}
+                  type="range"
+                  value={localOptions.maxWeightUtilization}
+                  min={70}
+                  max={100}
+                  onChange={(e) => handleOptionChange('maxWeightUtilization', Number(e.target.value))}
                   className="w-full"
-              />
+                />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>Conservative (70%)</span>
-                <span>Full (100%)</span>
+                  <span>Conservative (70%)</span>
+                  <span>Full (100%)</span>
+                </div>
               </div>
-            </div>
 
-            {/* Volume Utilization */}
+              {/* Volume Utilization */}
               <div>
-              <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-2">
                   <Label>Max Volume Utilization</Label>
                   <span className="text-sm font-bold text-primary">{localOptions.maxVolumeUtilization}%</span>
-              </div>
+                </div>
                 <Input
-                type="range"
-                value={localOptions.maxVolumeUtilization}
-                min={70}
-                max={100}
-                onChange={(e) => handleOptionChange('maxVolumeUtilization', Number(e.target.value))}
+                  type="range"
+                  value={localOptions.maxVolumeUtilization}
+                  min={70}
+                  max={100}
+                  onChange={(e) => handleOptionChange('maxVolumeUtilization', Number(e.target.value))}
                   className="w-full"
-              />
+                />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>Conservative (70%)</span>
-                <span>Full (100%)</span>
+                  <span>Conservative (70%)</span>
+                  <span>Full (100%)</span>
+                </div>
               </div>
-            </div>
 
-            {/* Fragility Buffer */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
+              {/* Fragility Buffer */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
                   <Label>Fragility Spacing Buffer</Label>
                   <span className="text-sm font-bold text-primary">{localOptions.fragilityBuffer}%</span>
-              </div>
+                </div>
                 <Input
-                type="range"
-                value={localOptions.fragilityBuffer}
-                min={0}
-                max={30}
-                onChange={(e) => handleOptionChange('fragilityBuffer', Number(e.target.value))}
+                  type="range"
+                  value={localOptions.fragilityBuffer}
+                  min={0}
+                  max={30}
+                  onChange={(e) => handleOptionChange('fragilityBuffer', Number(e.target.value))}
                   className="w-full"
-              />
+                />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>No Buffer</span>
-                <span>30% Extra Space</span>
+                  <span>No Buffer</span>
+                  <span>30% Extra Space</span>
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
 
@@ -438,30 +436,33 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-            <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Acceptable Risk Level</span>
-                <Badge variant={localOptions.riskToleranceThreshold < 30 ? 'success' : localOptions.riskToleranceThreshold < 70 ? 'warning' : 'destructive'}>
-                {localOptions.riskToleranceThreshold}/100
+                <Badge
+                  className={localOptions.riskToleranceThreshold < 30 ? 'bg-green-500 text-white' : localOptions.riskToleranceThreshold < 70 ? 'bg-amber-500 text-white' : undefined}
+                  variant={localOptions.riskToleranceThreshold >= 70 ? 'destructive' : undefined}
+                >
+                  {localOptions.riskToleranceThreshold}/100
                 </Badge>
-            </div>
+              </div>
               <Input
-              type="range"
-              value={localOptions.riskToleranceThreshold}
-              min={0}
-              max={100}
-              onChange={(e) => handleOptionChange('riskToleranceThreshold', Number(e.target.value))}
+                type="range"
+                value={localOptions.riskToleranceThreshold}
+                min={0}
+                max={100}
+                onChange={(e) => handleOptionChange('riskToleranceThreshold', Number(e.target.value))}
                 className="w-full"
-            />
+              />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>Conservative (0)</span>
-              <span>Moderate (50)</span>
-              <span>Aggressive (100)</span>
-            </div>
+                <span>Conservative (0)</span>
+                <span>Moderate (50)</span>
+                <span>Aggressive (100)</span>
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
-              {localOptions.riskToleranceThreshold < 30 && 'Conservative: Strict safety rules, lower utilization'}
-              {localOptions.riskToleranceThreshold >= 30 && localOptions.riskToleranceThreshold < 70 && 'Moderate: Balanced approach with standard rules'}
-              {localOptions.riskToleranceThreshold >= 70 && 'Aggressive: Maximum utilization, flexible rules'}
-            </p>
+                {localOptions.riskToleranceThreshold < 30 && 'Conservative: Strict safety rules, lower utilization'}
+                {localOptions.riskToleranceThreshold >= 30 && localOptions.riskToleranceThreshold < 70 && 'Moderate: Balanced approach with standard rules'}
+                {localOptions.riskToleranceThreshold >= 70 && 'Aggressive: Maximum utilization, flexible rules'}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -473,40 +474,40 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
           <CardTitle className="text-sm">Configuration Summary</CardTitle>
         </CardHeader>
         <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
               <span className="text-muted-foreground">Strategy:</span>
-            <span className="ml-1 font-medium capitalize">{localOptions.loadPriorityStrategy}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium capitalize">{localOptions.loadPriorityStrategy}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Stack Logic:</span>
-            <span className="ml-1 font-medium uppercase">{localOptions.stackLogic}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium uppercase">{localOptions.stackLogic}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Weight Limit:</span>
-            <span className="ml-1 font-medium">{localOptions.maxWeightUtilization}%</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localOptions.maxWeightUtilization}%</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Volume Limit:</span>
-            <span className="ml-1 font-medium">{localOptions.maxVolumeUtilization}%</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localOptions.maxVolumeUtilization}%</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Protected Zones:</span>
-            <span className="ml-1 font-medium">{localOptions.enableProtectedZoneLoading ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localOptions.enableProtectedZoneLoading ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Vehicle:</span>
-            <span className="ml-1 font-medium capitalize">{localOptions.vehicleTypeOverride}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium capitalize">{localOptions.vehicleTypeOverride}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Risk:</span>
-            <span className="ml-1 font-medium">{localOptions.riskToleranceThreshold}/100</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localOptions.riskToleranceThreshold}/100</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Route Grouping:</span>
-            <span className="ml-1 font-medium">{localOptions.groupByRoute ? 'On' : 'Off'}</span>
+              <span className="ml-1 font-medium">{localOptions.groupByRoute ? 'On' : 'Off'}</span>
+            </div>
           </div>
-        </div>
         </CardContent>
       </Card>
 
@@ -514,13 +515,13 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
       <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4 flex items-start">
           <Info className="h-5 w-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
-        <div className="flex-1">
+          <div className="flex-1">
             <h5 className="text-sm font-medium">AI Plan Generation</h5>
             <p className="text-xs text-muted-foreground mt-1">
-            The AI will use these parameters to generate an optimized load plan. You can modify these settings
-            and regenerate the plan at any time. Changes will take effect on the next generation.
-          </p>
-        </div>
+              The AI will use these parameters to generate an optimized load plan. You can modify these settings
+              and regenerate the plan at any time. Changes will take effect on the next generation.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

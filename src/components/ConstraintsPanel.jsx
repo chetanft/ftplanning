@@ -99,9 +99,9 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                {loadingSequenceOptions.map((option) => (
+                  {loadingSequenceOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                ))}
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -387,22 +387,21 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
                   { value: 'space', label: 'Space', description: 'Maximize space utilization' },
                   { value: 'weight', label: 'Weight', description: 'Optimize weight distribution' },
                   { value: 'min-vehicles', label: 'Min Vehicles', description: 'Minimize number of vehicles' },
-                  { value: 'balanced', label: 'Balanced', description: 'Balance all factors' }
+                  { value: 'route-optimized', label: 'Route Optimiser', description: 'Minimize total distance traveled' }
                 ].map((option) => (
                   <label
                     key={option.value}
-                    className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
-                      (localConstraints.optimizationGoal || 'balanced') === option.value
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-muted-foreground/50'
-                    }`}
+                    className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${(localConstraints.optimizationPriority || 'route-optimized') === option.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/50'
+                      }`}
                   >
                     <input
                       type="radio"
-                      name="optimizationGoal"
+                      name="optimizationPriority"
                       value={option.value}
-                      checked={(localConstraints.optimizationGoal || 'balanced') === option.value}
-                      onChange={(e) => handleConstraintChange('optimizationGoal', e.target.value)}
+                      checked={(localConstraints.optimizationPriority || 'route-optimized') === option.value}
+                      onChange={(e) => handleConstraintChange('optimizationPriority', e.target.value)}
                       className="mt-1 mr-3"
                     />
                     <div>
@@ -517,32 +516,31 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
             <Separator />
 
             {/* Route Strategy */}
-              <div className="space-y-3">
+            <div className="space-y-3">
               <Label>Route Strategy</Label>
-                {routeStrategyOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
-                      (localConstraints.routeStrategy || 'separate') === option.value
+              {routeStrategyOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${(localConstraints.routeStrategy || 'separate') === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-muted-foreground/50'
                     }`}
-                  >
-                    <input
-                      type="radio"
-                      name="routeStrategy"
-                      value={option.value}
-                      checked={(localConstraints.routeStrategy || 'separate') === option.value}
-                      onChange={(e) => handleConstraintChange('routeStrategy', e.target.value)}
-                      className="mt-1 mr-3"
-                    />
-                    <div>
+                >
+                  <input
+                    type="radio"
+                    name="routeStrategy"
+                    value={option.value}
+                    checked={(localConstraints.routeStrategy || 'separate') === option.value}
+                    onChange={(e) => handleConstraintChange('routeStrategy', e.target.value)}
+                    className="mt-1 mr-3"
+                  />
+                  <div>
                     <span className="text-sm font-medium">{option.label}</span>
                     <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
+                  </div>
+                </label>
+              ))}
+            </div>
 
             <Separator />
 
@@ -756,24 +754,23 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
     <div className="space-y-6">
       {/* Section Tabs */}
       <div className="flex space-x-2 border-b">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            return (
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
             <Button
-                key={section.id}
+              key={section.id}
               variant="ghost"
-                onClick={() => setActiveSection(section.id)}
-              className={`rounded-none border-b-2 px-4 pb-3 pt-2 ${
-                  activeSection === section.id
-                  ? 'border-primary text-primary' 
+              onClick={() => setActiveSection(section.id)}
+              className={`rounded-none border-b-2 px-4 pb-3 pt-2 ${activeSection === section.id
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground'
                 }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {section.label}
+            >
+              <Icon className="h-4 w-4 mr-2" />
+              {section.label}
             </Button>
-            );
-          })}
+          );
+        })}
       </div>
 
       {/* Section Content */}
@@ -787,40 +784,40 @@ const ConstraintsPanel = ({ constraints, onConstraintsChange }) => {
           <CardTitle className="text-sm">Current Configuration Summary</CardTitle>
         </CardHeader>
         <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
               <span className="text-muted-foreground">Stacking:</span>
-            <span className="ml-1 font-medium uppercase">{localConstraints.loadingSequence || 'LIFO'}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium uppercase">{localConstraints.loadingSequence || 'LIFO'}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Route:</span>
               <span className="ml-1 font-medium capitalize">{localConstraints.routeStrategy || 'Separate'}</span>
-          </div>
-          <div>
+            </div>
+            <div>
               <span className="text-muted-foreground">Optimization:</span>
-            <span className="ml-1 font-medium capitalize">{localConstraints.optimizationGoal || 'Balanced'}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium capitalize">{localConstraints.optimizationGoal || 'Balanced'}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Fragility Scale:</span>
-            <span className="ml-1 font-medium">{localConstraints.fragilityScoringScale === 'simple' ? '1-3' : localConstraints.fragilityScoringScale === 'detailed' ? '1-10' : '1-5'}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localConstraints.fragilityScoringScale === 'simple' ? '1-3' : localConstraints.fragilityScoringScale === 'detailed' ? '1-10' : '1-5'}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Max Weight:</span>
               <span className="ml-1 font-medium">{(localConstraints.maxWeight || 10000).toLocaleString()} kg</span>
-          </div>
+            </div>
             <div>
               <span className="text-muted-foreground">Max Volume:</span>
               <span className="ml-1 font-medium">{localConstraints.maxVolume || 40} m³</span>
-        </div>
-          <div>
+            </div>
+            <div>
               <span className="text-muted-foreground">AI Smart Loading:</span>
-            <span className="ml-1 font-medium">{localConstraints.enableAISmartLoading !== false ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          <div>
+              <span className="ml-1 font-medium">{localConstraints.enableAISmartLoading !== false ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            <div>
               <span className="text-muted-foreground">Protected Zones:</span>
-            <span className="ml-1 font-medium">{localConstraints.enableProtectedZoneEnforcement !== false ? 'Enabled' : 'Disabled'}</span>
+              <span className="ml-1 font-medium">{localConstraints.enableProtectedZoneEnforcement !== false ? 'Enabled' : 'Disabled'}</span>
+            </div>
           </div>
-      </div>
         </CardContent>
       </Card>
     </div>

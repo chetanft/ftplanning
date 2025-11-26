@@ -43,7 +43,7 @@ const PlansList = ({ plans, onViewPlan }) => {
   const getStatusVariant = (status) => {
     switch (status?.toLowerCase()) {
       case 'planned': return 'default';
-      case 'active': return 'success';
+      case 'active': return 'bg-green-500 text-white';
       case 'completed': return 'secondary';
       case 'failed': return 'destructive';
       default: return 'secondary';
@@ -180,7 +180,12 @@ const PlansList = ({ plans, onViewPlan }) => {
                       </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(plan.status)}>
+                    <Badge 
+                      {...(getStatusVariant(plan.status).includes('bg-') 
+                        ? { className: getStatusVariant(plan.status) }
+                        : { variant: getStatusVariant(plan.status) }
+                      )}
+                    >
                       {plan.status === 'failed' ? (
                         <AlertCircle className="w-3 h-3 mr-1" />
                       ) : (

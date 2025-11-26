@@ -27,7 +27,7 @@ export const calculateOrderTotals = (orders) => {
 /**
  * Generate optimal vehicle suggestions based on orders and available vehicle types
  */
-export const generateVehicleSuggestions = (orders, vehicleTypes) => {
+export const generateVehicleSuggestions = (orders, vehicleTypes, priority = 'efficiency') => {
   const { totalWeight, totalVolume } = calculateOrderTotals(orders);
 
   if (totalWeight === 0) return [];
@@ -110,14 +110,14 @@ export const generateVehicleSuggestions = (orders, vehicleTypes) => {
 
       if (smallVehiclesNeeded <= 3) {
         const totalCost = (largestVehicle.costPerKm * largeVehiclesNeeded) +
-                         (smallestVehicle.costPerKm * smallVehiclesNeeded);
+          (smallestVehicle.costPerKm * smallVehiclesNeeded);
 
         // Calculate actual utilization for mixed loads
-        const totalCapacityWeight = (largestVehicle.maxWeight * largeVehiclesNeeded) + 
-                                   (smallestVehicle.maxWeight * smallVehiclesNeeded);
-        const totalCapacityVolume = (largestVehicle.volume * largeVehiclesNeeded) + 
-                                   (smallestVehicle.volume * smallVehiclesNeeded);
-        
+        const totalCapacityWeight = (largestVehicle.maxWeight * largeVehiclesNeeded) +
+          (smallestVehicle.maxWeight * smallVehiclesNeeded);
+        const totalCapacityVolume = (largestVehicle.volume * largeVehiclesNeeded) +
+          (smallestVehicle.volume * smallVehiclesNeeded);
+
         const actualWeightUtil = (totalWeight / totalCapacityWeight) * 100;
         const actualVolumeUtil = (totalVolume / totalCapacityVolume) * 100;
         const avgUtilization = Math.max(actualWeightUtil, actualVolumeUtil);
@@ -188,16 +188,75 @@ export const generateVehicleSuggestions = (orders, vehicleTypes) => {
     }
   }
 
+  // Strategy 5: Route Optimiser (minimize vehicle count as proxy for distance)
+  if (priority === 'route-optimized') {
+    // Reuse cost-optimized solutions but score differently
+    // Or create specific logic to minimize N vehicles
+    // For now, we'll use the existing solutions but prioritize those with fewer vehicles
+
+    // We can also try to find the absolute minimum number of vehicles regardless of cost
+    // This is similar to the "multi-same" strategy but we want to find the global minimum across all types
+
+    const routeOptimizedSolutions = [];
+
+    // Try to fit everything into the largest available vehicles first (usually minimizes count)
+    const largestVehicles = [...sortedVehicles].sort((a, b) => b.maxWeight - a.maxWeight);
+
+    for (const vehicle of largestVehicles) {
+      const vehiclesNeeded = Math.ceil(Math.max(
+        totalWeight / vehicle.maxWeight,
+        totalVolume / vehicle.volume
+      ));
+
+      if (vehiclesNeeded > 0 && vehiclesNeeded <= 5) {
+        const weightUtil = (totalWeight / (vehicle.maxWeight * vehiclesNeeded)) * 100;
+        const volumeUtil = (totalVolume / (vehicle.volume * vehiclesNeeded)) * 100;
+        const maxUtil = Math.max(weightUtil, volumeUtil);
+
+        // Score based on vehicle count (lower is better)
+        // 1 vehicle = 100 score, 2 vehicles = 50 score, etc.
+        const efficiencyScore = (100 / vehiclesNeeded) + (maxUtil / 10);
+
+        routeOptimizedSolutions.push({
+          vehicles: [{ type: vehicle.id, quantity: vehiclesNeeded }],
+          totalCost: vehicle.costPerKm * vehiclesNeeded,
+          weightUtilization: weightUtil,
+          volumeUtilization: volumeUtil,
+          efficiency: maxUtil,
+          efficiencyScore: efficiencyScore,
+          description: `Route Optimized: ${vehiclesNeeded}x ${vehicle.name}`,
+          strategy: 'route-optimized'
+        });
+      }
+    }
+
+    // Add these to suggestions
+    routeOptimizedSolutions.forEach(s => suggestions.push(s));
+  }
+
   // Add best cost-optimized solutions
   costOptimizedSolutions
     .sort((a, b) => a.totalCost - b.totalCost)
     .slice(0, 2)
     .forEach(solution => suggestions.push(solution));
 
-  // Sort all suggestions by efficiency score (higher is better), then by efficiency, then by cost
+  // Sort all suggestions based on priority
   return suggestions
     .sort((a, b) => {
-      // First, prioritize by efficiency score if available
+      if (priority === 'cost') {
+        return a.totalCost - b.totalCost;
+      }
+      if (priority === 'route-optimized') {
+        // Prioritize fewer vehicles (proxy for less distance/stops complexity)
+        const countA = a.vehicles.reduce((sum, v) => sum + v.quantity, 0);
+        const countB = b.vehicles.reduce((sum, v) => sum + v.quantity, 0);
+        if (countA !== countB) return countA - countB;
+
+        // If counts are equal, use efficiency
+        return b.efficiency - a.efficiency;
+      }
+
+      // Default: Efficiency score
       if (a.efficiencyScore !== undefined && b.efficiencyScore !== undefined) {
         const scoreDiff = b.efficiencyScore - a.efficiencyScore;
         if (Math.abs(scoreDiff) > 5) return scoreDiff;
@@ -507,7 +566,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
     loadingSequence = 'lifo',
     allowMixedRoutes = false,
     dropPoints = 1,
-    vehicleTypeOverride = 'auto' // 'auto', 'small', 'medium', 'large', or specific vehicle ID
+    vehicleTypeOverride = 'auto', // 'auto', 'small', 'medium', 'large', or specific vehicle ID
+    priority = 'efficiency' // 'efficiency', 'cost', 'route-optimized'
   } = options;
 
   let vehicleCounter = 1;
@@ -515,7 +575,7 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
 
   // Filter vehicle types based on override selection
   let availableVehicleTypes = vehicleTypes;
-  
+
   if (vehicleTypeOverride && vehicleTypeOverride !== 'auto') {
     // Map size categories to actual vehicle types
     const sizeCategories = {
@@ -527,13 +587,13 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
 
     if (sizeCategories[vehicleTypeOverride]) {
       // Filter by size category
-      availableVehicleTypes = vehicleTypes.filter(v => 
+      availableVehicleTypes = vehicleTypes.filter(v =>
         sizeCategories[vehicleTypeOverride].includes(v.id)
       );
     } else {
       // Filter by specific vehicle ID or name match
-      availableVehicleTypes = vehicleTypes.filter(v => 
-        v.id === vehicleTypeOverride || 
+      availableVehicleTypes = vehicleTypes.filter(v =>
+        v.id === vehicleTypeOverride ||
         v.id.toLowerCase() === vehicleTypeOverride.toLowerCase() ||
         v.name.toLowerCase().includes(vehicleTypeOverride.toLowerCase()) ||
         vehicleTypeOverride.toLowerCase().includes(v.name.toLowerCase().split(' ')[0]) // Match first word (e.g., "tata" matches "Tata Ace")
@@ -545,7 +605,7 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
       console.warn(`No vehicles found for override "${vehicleTypeOverride}", using all available vehicles`);
       availableVehicleTypes = vehicleTypes;
     }
-    
+
     console.log(`Vehicle override "${vehicleTypeOverride}" - Using vehicles:`, availableVehicleTypes.map(v => v.name).join(', '));
   }
 
@@ -591,8 +651,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
         console.log(`Using explicit vehicle config for route ${route}:`, vehicleConfig);
         vehicleConfig.forEach(vc => {
           // Find vehicle type from available types (respects override)
-          const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) || 
-                             vehicleTypes.find(vt => vt.id === vc.type);
+          const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) ||
+            vehicleTypes.find(vt => vt.id === vc.type);
           if (vehicleType) {
             const routeVehicles = createVehicleInstances(vc.quantity, vehicleType);
             const distributedVehicles = distributeOrdersForRoute(routeOrders, routeVehicles, loadingSequence);
@@ -601,7 +661,7 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
         });
       } else {
         // Auto-select: Determine optimal vehicle allocation using filtered vehicle types
-        const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, availableVehicleTypes);
+        const routeVehicleSuggestions = generateVehicleSuggestions(routeOrders, availableVehicleTypes, priority);
         const bestSuggestion = routeVehicleSuggestions[0];
 
         if (bestSuggestion) {
@@ -635,12 +695,12 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
   } else {
     // Strategy 2: Consolidate orders across routes - use single vehicle pool
     const vehicleInstances = [];
-    
+
     if (hasExplicitVehicleConfig) {
       // Use explicit config
       vehicleConfig.forEach(vc => {
-        const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) || 
-                           vehicleTypes.find(vt => vt.id === vc.type);
+        const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type) ||
+          vehicleTypes.find(vt => vt.id === vc.type);
         if (vehicleType) {
           vehicleInstances.push(...createVehicleInstances(vc.quantity, vehicleType));
         }
@@ -648,8 +708,8 @@ export const distributeOrdersAcrossVehicles = (orders, vehicleConfig, vehicleTyp
     } else {
       // Auto-select for consolidated strategy
       const { totalWeight, totalVolume } = calculateOrderTotals(orders);
-      const suggestions = generateVehicleSuggestions(orders, availableVehicleTypes);
-      
+      const suggestions = generateVehicleSuggestions(orders, availableVehicleTypes, priority);
+
       if (suggestions.length > 0) {
         suggestions[0].vehicles.forEach(vc => {
           const vehicleType = availableVehicleTypes.find(vt => vt.id === vc.type);

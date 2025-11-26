@@ -401,7 +401,7 @@ const StackingVisualization = ({
           <div className="text-center">
             <div 
               className="text-lg font-bold"
-              style={{ color: stability.weightDistribution.score >= 70 ? '#22c55e' : '#eab308' }}
+              style={{ color: stability.weightDistribution.score >= 70 ? '#22c55e' : '#eab308' }} // green-500 or yellow-500
             >
               {stability.weightDistribution.score}%
             </div>
@@ -410,7 +410,7 @@ const StackingVisualization = ({
           <div className="text-center">
             <div 
               className="text-lg font-bold"
-              style={{ color: stability.fragilityProgression.score >= 80 ? '#22c55e' : '#eab308' }}
+              style={{ color: stability.fragilityProgression.score >= 80 ? '#22c55e' : '#eab308' }} // green-500 or yellow-500
             >
               {stability.fragilityProgression.score}%
             </div>
@@ -419,7 +419,7 @@ const StackingVisualization = ({
           <div className="text-center">
             <div 
               className="text-lg font-bold"
-              style={{ color: stability.stackingCompatibility.score >= 80 ? '#22c55e' : '#eab308' }}
+              style={{ color: stability.stackingCompatibility.score >= 80 ? '#22c55e' : '#eab308' }} // green-500 or yellow-500
             >
               {stability.stackingCompatibility.score}%
             </div>

@@ -236,7 +236,7 @@ const FragilityPanel = ({
                     <IconComponent className="h-4 w-4" />
                     {rec.packaging.label}
                     </span>
-                  <Badge variant="success" className="text-xs">
+                  <Badge className="bg-green-500 text-white text-xs">
                       {rec.suitabilityScore}% match
                   </Badge>
                 </Button>
@@ -348,9 +348,9 @@ const FragilityPanel = ({
         )}
 
         {fragilitySummary.hasFragile && !fragilitySummary.hasExtremelyFragile && (
-            <div className="mt-3 p-2 bg-warning/10 border border-warning/20 rounded-lg flex items-center">
-              <AlertTriangle className="h-4 w-4 text-warning mr-2" />
-              <span className="text-sm text-warning">
+            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center">
+              <AlertTriangle className="h-4 w-4 text-amber-600 mr-2" />
+              <span className="text-sm text-amber-600">
               Contains fragile items - careful handling required
             </span>
           </div>

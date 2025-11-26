@@ -37,10 +37,10 @@ const transformPlanForVisualization = (plan, vehicleTypesList) => {
   const transformedVehicles = plan.vehicles.map((vehicle, index) => {
     // Find vehicle type specification
     const vehicleTypeSpec = vehicleTypesList.find(vt => vt.id === vehicle.type);
-    
+
     // Generate vehicle ID if not present
     const vehicleId = vehicle.id || `VEHICLE-${String(index + 1).padStart(3, '0')}`;
-    
+
     // Expand order references to full order objects
     const fullOrders = (vehicle.orders || []).map(orderRef => {
       const fullOrder = ordersMap.get(orderRef.id);
@@ -88,7 +88,7 @@ function App() {
   const [planData, setPlanData] = useState(null);
   const [constraintsModalOpen, setConstraintsModalOpen] = useState(false);
   const [constraints, setConstraints] = useState({
-    optimizationPriority: 'all',
+    optimizationPriority: 'route-optimized',
     routeStrategy: 'separate',
     loadingSequence: 'lifo',
     maxWeight: 25000,
@@ -125,7 +125,7 @@ function App() {
     console.log('OrderId to remove:', orderId);
     console.log('Current selectedOrders count:', selectedOrders.length);
     console.log('Current selectedOrders IDs:', selectedOrders.map(o => o.id));
-    
+
     setSelectedOrders(prev => {
       const beforeCount = prev.length;
       const filtered = prev.filter(order => {
@@ -138,14 +138,14 @@ function App() {
       const afterCount = filtered.length;
       console.log(`Orders before: ${beforeCount}, after: ${afterCount}, removed: ${beforeCount - afterCount}`);
       console.log('Remaining order IDs:', filtered.map(o => o.id));
-      
+
       if (beforeCount === afterCount) {
         console.warn('⚠️ No order was removed! Order ID might not match.');
         console.log('Looking for order with ID:', orderId);
         const found = prev.find(o => o.id === orderId);
         console.log('Found order:', found);
       }
-      
+
       return filtered;
     });
   };
@@ -194,7 +194,8 @@ function App() {
       loadingSequence: constraints.loadingSequence || planConfig.loadingSequence || 'lifo',
       allowMixedRoutes: planConfig.allowMixedRoutes || false,
       dropPoints: planConfig.dropPoints || 1,
-      vehicleTypeOverride: planConfig.vehicleTypeOverride || 'auto'
+      vehicleTypeOverride: planConfig.vehicleTypeOverride || 'auto',
+      priority: planConfig.priorities ? planConfig.priorities[0] : 'efficiency'
     };
 
     let optimizedVehicles;
