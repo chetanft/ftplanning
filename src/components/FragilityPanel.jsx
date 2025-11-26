@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AlertTriangle, Package, Shield, Thermometer, Droplets, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { FRAGILITY_DESCRIPTIONS, MATERIAL_PROFILES, assessOrderFragility } from '../utils/fragilityScoring';
 import { getPackagingType, recommendPackaging, getPackagingIcon } from '../utils/packagingTypes';
@@ -23,10 +23,18 @@ const FragilityPanel = ({
   selectedOrder = null, 
   onUpdateOrder = null,
   onBulkUpdate = null,
-  readOnly = false 
+  readOnly = false,
+  initialExpandedSection = 'fragility'
 }) => {
-  const [expandedSection, setExpandedSection] = useState('fragility');
+  const [expandedSection, setExpandedSection] = useState(initialExpandedSection);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  
+  // Update expanded section when initialExpandedSection prop changes
+  useEffect(() => {
+    if (initialExpandedSection) {
+      setExpandedSection(initialExpandedSection);
+    }
+  }, [initialExpandedSection]);
 
   // Calculate fragility summary for all orders
   const fragilitySummary = useMemo(() => {

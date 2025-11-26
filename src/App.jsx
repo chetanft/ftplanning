@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Package, Settings, BarChart3, FileText, Map, X } from 'lucide-react';
+import { Package, Settings, BarChart3, FileText, Map as MapIcon, X } from 'lucide-react';
 import AppLayout from './components/layout/AppLayout';
 import OrderIntake from './components/OrderIntake';
 import MaterialTypeModal from './components/MaterialTypeModal';
@@ -9,8 +9,9 @@ import TruckVisualization from './components/TruckVisualization';
 import RouteVisualization from './components/RouteVisualization';
 import CreatePlanPage from './components/CreatePlanPage';
 import PlansList from './components/PlansList';
+import ReportsPage from './components/ReportsPage';
 import ErrorBoundary from './components/ErrorBoundary';
-import { sampleOrders, vehicleTypes } from './data/mockData';
+import { sampleOrders, vehicleTypes, perfectSamplePlans } from './data/mockData';
 import { distributeOrdersAcrossVehicles, calculateOrderTotals } from './utils/vehicleOptimization';
 import { LoadOptimizer } from './utils/loadOptimization';
 import GoogleMapsService from './services/googleMapsService';
@@ -18,11 +19,70 @@ import { getVehicleRouteInfo, calculatePlanCost } from './services/routeDistance
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
+// Transform plan data from PlansList format to TruckVisualization format
+const transformPlanForVisualization = (plan, vehicleTypesList) => {
+  if (!plan || !plan.vehicles) {
+    return plan;
+  }
+
+  // Create a map of orders by ID for quick lookup
+  const ordersMap = new Map();
+  if (plan.orders && Array.isArray(plan.orders)) {
+    plan.orders.forEach(order => {
+      ordersMap.set(order.id, order);
+    });
+  }
+
+  // Transform vehicles
+  const transformedVehicles = plan.vehicles.map((vehicle, index) => {
+    // Find vehicle type specification
+    const vehicleTypeSpec = vehicleTypesList.find(vt => vt.id === vehicle.type);
+    
+    // Generate vehicle ID if not present
+    const vehicleId = vehicle.id || `VEHICLE-${String(index + 1).padStart(3, '0')}`;
+    
+    // Expand order references to full order objects
+    const fullOrders = (vehicle.orders || []).map(orderRef => {
+      const fullOrder = ordersMap.get(orderRef.id);
+      if (fullOrder) {
+        return {
+          ...fullOrder,
+          quantity: orderRef.quantity || fullOrder.quantity || 1
+        };
+      }
+      // Fallback: return orderRef if full order not found
+      return orderRef;
+    });
+
+    return {
+      ...vehicle,
+      id: vehicleId,
+      vehicleType: vehicleTypeSpec || {
+        id: vehicle.type,
+        name: vehicle.type,
+        dimensions: {
+          length: 6100,
+          width: 2440,
+          height: 2590
+        },
+        maxWeight: 25000,
+        volume: 38.5
+      },
+      orders: fullOrders
+    };
+  });
+
+  return {
+    ...plan,
+    vehicles: transformedVehicles
+  };
+};
+
 function App() {
   const [currentView, setCurrentView] = useState('orders');
   const [orders, setOrders] = useState(sampleOrders);
   const [selectedOrders, setSelectedOrders] = useState([]);
-  const [plans, setPlans] = useState([]);
+  const [plans, setPlans] = useState(perfectSamplePlans);
   const [materialTypeModalOpen, setMaterialTypeModalOpen] = useState(false);
   const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
   const [planData, setPlanData] = useState(null);
@@ -58,6 +118,36 @@ function App() {
     if (!selectedOrders.find(o => o.id === order.id)) {
       setSelectedOrders(prev => [...prev, order]);
     }
+  };
+
+  const handleRemoveOrder = (orderId) => {
+    console.log('=== handleRemoveOrder called ===');
+    console.log('OrderId to remove:', orderId);
+    console.log('Current selectedOrders count:', selectedOrders.length);
+    console.log('Current selectedOrders IDs:', selectedOrders.map(o => o.id));
+    
+    setSelectedOrders(prev => {
+      const beforeCount = prev.length;
+      const filtered = prev.filter(order => {
+        const shouldKeep = order.id !== orderId;
+        if (!shouldKeep) {
+          console.log('Removing order:', order.id, 'matches:', order.id === orderId);
+        }
+        return shouldKeep;
+      });
+      const afterCount = filtered.length;
+      console.log(`Orders before: ${beforeCount}, after: ${afterCount}, removed: ${beforeCount - afterCount}`);
+      console.log('Remaining order IDs:', filtered.map(o => o.id));
+      
+      if (beforeCount === afterCount) {
+        console.warn('⚠️ No order was removed! Order ID might not match.');
+        console.log('Looking for order with ID:', orderId);
+        const found = prev.find(o => o.id === orderId);
+        console.log('Found order:', found);
+      }
+      
+      return filtered;
+    });
   };
 
   // Calculate available orders (orders not currently selected)
@@ -242,6 +332,7 @@ function App() {
             onGeneratePlan={handleGeneratePlan}
             availableOrders={availableOrders}
             onAddOrder={handleAddOrder}
+            onRemoveOrder={handleRemoveOrder}
           />
         ) : (
           <Card className="text-center py-12">
@@ -263,8 +354,17 @@ function App() {
         <PlansList
           plans={plans}
           onViewPlan={(plan) => {
-            setPlanData(plan);
-            setCurrentView('visualization');
+            try {
+              console.log('onViewPlan called with plan:', plan);
+              // Transform plan data to match TruckVisualization expectations
+              const transformedPlan = transformPlanForVisualization(plan, vehicleTypes);
+              console.log('Transformed plan:', transformedPlan);
+              setPlanData(transformedPlan);
+              setCurrentView('visualization');
+            } catch (error) {
+              console.error('Error in onViewPlan:', error);
+              alert('Error loading plan: ' + error.message);
+            }
           }}
         />
       )}
@@ -280,6 +380,8 @@ function App() {
             googleMapsApiKey={googleMapsApiKey}
             availableOrders={availableOrders}
             onAddOrder={handleAddOrder}
+            onRemoveOrder={handleRemoveOrder}
+            onUpdateOrder={handleUpdateOrder}
           />
         ) : (
           <Card className="text-center py-12">
@@ -339,7 +441,7 @@ function App() {
         ) : (
           <Card className="text-center py-12">
             <div className="flex flex-col items-center">
-              <Map className="h-12 w-12 text-muted-foreground mb-4" />
+              <MapIcon className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No Routes to Display</h3>
               <p className="text-muted-foreground mb-4">
                 Please create and generate a plan first to view route optimization.
@@ -353,10 +455,7 @@ function App() {
       )}
 
       {currentView === 'reports' && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Reports & Analytics</h2>
-          <p className="text-muted-foreground">Reports functionality will be implemented here.</p>
-        </Card>
+        <ReportsPage plans={plans} orders={orders} />
       )}
 
       {/* Material Type Selection Modal */}

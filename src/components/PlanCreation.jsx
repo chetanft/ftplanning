@@ -10,10 +10,18 @@ import { Progress } from "@/components/ui/progress";
 import PlanEditModal from './PlanEditModal';
 import { Switch } from "@/components/ui/switch"; // Assuming Switch exists or will fallback to simple toggle
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "@/components/ui/drawer";
 import { scoreUnplannedOrders } from '../utils/orderRecommendation';
 
-const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constraints, availableOrders = [], onAddOrder }) => {
+const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constraints, availableOrders = [], onAddOrder, onRemoveOrder }) => {
+  // Debug: Log props on mount/update
+  React.useEffect(() => {
+    console.log('PlanCreation props:', {
+      selectedOrdersCount: selectedOrders?.length,
+      hasOnRemoveOrder: !!onRemoveOrder,
+      onRemoveOrderType: typeof onRemoveOrder
+    });
+  }, [selectedOrders, onRemoveOrder]);
   // Auto-suggestion algorithm using utility function
   const autoSuggestVehicles = useMemo(() =>
     generateVehicleSuggestions(selectedOrders, vehicleTypes),
@@ -40,12 +48,20 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
   // Stacking Direction State
   const [stackingDirection, setStackingDirection] = useState('bottom-up'); // 'bottom-up', 'pier-to-pier'
 
-  // Popover state for unplanned orders (keyed by routeId)
-  const [openPopovers, setOpenPopovers] = useState({});
+  // Drawer state for unplanned orders (keyed by routeId)
+  const [openDrawers, setOpenDrawers] = useState({});
+  const [activeRouteId, setActiveRouteId] = useState(null);
 
   // Group orders by route
   const ordersByRoute = useMemo(() => {
-    return groupOrdersByRoute(selectedOrders);
+    console.log('Recalculating ordersByRoute, selectedOrders count:', selectedOrders?.length);
+    const grouped = groupOrdersByRoute(selectedOrders);
+    console.log('Grouped orders:', Object.keys(grouped).map(route => ({
+      route,
+      count: grouped[route].length,
+      orderIds: grouped[route].map(o => o.id)
+    })));
+    return grouped;
   }, [selectedOrders]);
 
   // Calculate totals using utility function
@@ -119,27 +135,18 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
       return [];
     }
 
-    const recommendations = [];
-    const currentWeight = totals.totalWeight;
-    const currentVolume = totals.totalVolume;
+    // Use the same logic as scoreUnplannedOrders: calculate remaining capacity for the primary vehicle
+    const primaryVehicle = selectedVehicles[0];
+    if (!primaryVehicle) return [];
 
-    // Calculate total capacity of selected vehicles
-    let totalMaxWeight = 0;
-    let totalMaxVolume = 0;
+    const vehicleSpec = vehicleTypes.find(v => v.id === primaryVehicle.type);
+    if (!vehicleSpec) return [];
 
-    selectedVehicles.forEach(sv => {
-      const vehicleSpec = vehicleTypes.find(v => v.id === sv.type);
-      if (vehicleSpec) {
-        totalMaxWeight += vehicleSpec.maxWeight * sv.quantity;
-        totalMaxVolume += vehicleSpec.volume * sv.quantity;
-      }
-    });
+    // Calculate remaining capacity using same formula as scoreUnplannedOrders
+    const remainingWeightCapacity = vehicleSpec.maxWeight * (100 - (currentUtilization.weightUtilization || currentUtilization.weight || 0)) / 100;
+    const remainingVolumeCapacity = vehicleSpec.volume * (100 - (currentUtilization.volumeUtilization || currentUtilization.volume || 0)) / 100;
 
-    const remainingWeight = totalMaxWeight - currentWeight;
-    const remainingVolume = totalMaxVolume - currentVolume;
-
-    // Simple greedy strategy: find orders that fit
-    // Filter orders that fit within remaining capacity (with some buffer)
+    // Filter orders that fit within remaining capacity of primary vehicle
     const candidates = availableOrders.filter(order => {
       const orderVolume = order.materialType === 'cuboidal'
         ? (order.dimensions.length * order.dimensions.width * order.dimensions.height) / 1e9
@@ -148,7 +155,10 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
       const totalOrderWeight = order.weight * (order.quantity || 1);
       const totalOrderVolume = orderVolume * (order.quantity || 1);
 
-      return totalOrderWeight <= remainingWeight && totalOrderVolume <= remainingVolume;
+      const weightFitRatio = totalOrderWeight / remainingWeightCapacity;
+      const volumeFitRatio = totalOrderVolume / remainingVolumeCapacity;
+
+      return weightFitRatio <= 1 && volumeFitRatio <= 1;
     });
 
     // Sort by weight (heaviest first) to maximize utilization
@@ -156,7 +166,7 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
 
     // Take top 3
     return candidates.slice(0, 3);
-  }, [availableOrders, currentUtilization, totals, selectedVehicles]);
+  }, [availableOrders, currentUtilization, selectedVehicles, vehicleTypes]);
 
   const handleGeneratePlan = () => {
     // Validate and generate plan
@@ -330,34 +340,109 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                       {/* Orders in this route */}
                       <div className="space-y-2">
                         {orders.map(order => (
-                          <div key={order.id} className="flex items-center justify-between text-sm">
+                          <div 
+                            key={order.id} 
+                            className="flex items-center justify-between text-sm"
+                            onClick={(e) => {
+                              // Prevent row clicks from interfering
+                              const target = e.target;
+                              const isButton = target.closest('button') || target.closest('[data-remove-order]');
+                              if (!isButton) {
+                                return;
+                              }
+                            }}
+                          >
                             <span className="text-gray-600">{order.id} - {order.seller}</span>
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-4" onClick={(e) => e.stopPropagation()}>
                               <span className="text-gray-500">{order.quantity} units</span>
                               <span className="text-gray-500">{order.weight * order.quantity} kg</span>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive">
-                                <Minus className="h-4 w-4" />
-                              </Button>
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                className="relative z-10"
+                              >
+                                <button
+                                  type="button"
+                                  data-remove-order={order.id}
+                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-red-100 hover:text-red-700 h-6 w-6 text-red-600 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.nativeEvent?.stopImmediatePropagation();
+                                    
+                                    console.log('=== MINUS BUTTON CLICKED ===');
+                                    console.log('Order ID to remove:', order.id);
+                                    console.log('Order object:', order);
+                                    console.log('onRemoveOrder type:', typeof onRemoveOrder);
+                                    console.log('onRemoveOrder function:', onRemoveOrder);
+                                    console.log('Current selectedOrders count:', selectedOrders.length);
+                                    
+                                    if (onRemoveOrder && typeof onRemoveOrder === 'function') {
+                                      console.log('✅ Calling onRemoveOrder with orderId:', order.id);
+                                      onRemoveOrder(order.id);
+                                      console.log('✅ onRemoveOrder call completed');
+                                    } else {
+                                      console.error('❌ onRemoveOrder is not a function!', {
+                                        exists: !!onRemoveOrder,
+                                        type: typeof onRemoveOrder,
+                                        value: onRemoveOrder
+                                      });
+                                    }
+                                  }}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  onMouseUp={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                  title="Remove order from plan"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
 
-                      <Popover
-                        open={openPopovers[routeId] || false}
-                        onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [routeId]: open }))}
+                      <Drawer
+                        open={openDrawers[routeId] || false}
+                        onOpenChange={(open) => {
+                          setOpenDrawers(prev => ({ ...prev, [routeId]: open }));
+                          if (open) setActiveRouteId(routeId);
+                        }}
                       >
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm" className="mt-3">
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Unplanned Orders
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80" align="start">
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-sm mb-3">
-                              Unplanned Orders for {route?.name || routeId}
-                            </h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => {
+                            setOpenDrawers(prev => ({ ...prev, [routeId]: true }));
+                            setActiveRouteId(routeId);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Unplanned Orders
+                        </Button>
+                        <DrawerContent>
+                          <DrawerHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <DrawerTitle>Add Unplanned Orders</DrawerTitle>
+                                <DrawerDescription>
+                                  Unplanned Orders for {route?.name || routeId}
+                                </DrawerDescription>
+                              </div>
+                              <DrawerClose asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Plus className="h-4 w-4 rotate-45" />
+                                </Button>
+                              </DrawerClose>
+                            </div>
+                          </DrawerHeader>
+                          <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
                             {(() => {
                               // Debug: Log for troubleshooting
                               console.log('🔍 Debug Unplanned Orders:', {
@@ -467,7 +552,7 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                                       </div>
                                     </div>
                                   )}
-                                  <div className="max-h-96 overflow-y-auto space-y-3">
+                                  <div className="space-y-3">
                                     {scoredOrders.map(order => (
                                       <div
                                         key={order.id}
@@ -558,7 +643,7 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                                           onClick={() => {
                                             if (onAddOrder) {
                                               onAddOrder(order);
-                                              setOpenPopovers(prev => ({ ...prev, [routeId]: false }));
+                                              setOpenDrawers(prev => ({ ...prev, [routeId]: false }));
                                             }
                                           }}
                                         >
@@ -572,8 +657,8 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                               );
                             })()}
                           </div>
-                        </PopoverContent>
-                      </Popover>
+                        </DrawerContent>
+                      </Drawer>
                     </div>
                   );
                 })}

@@ -417,6 +417,35 @@ const TruckVisualization = ({ planData }) => {
     }
   }, []);
 
+  // Validate planData structure (after hooks)
+  if (!planData) {
+    return (
+      <div className="card">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Plan Data</h3>
+            <p className="text-gray-600">Please select a plan to view the 3D visualization.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!planData.vehicles || !Array.isArray(planData.vehicles) || planData.vehicles.length === 0) {
+    return (
+      <div className="card">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Vehicles Found</h3>
+            <p className="text-gray-600">This plan does not contain any vehicle assignments.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const calculateUtilization = () => {
     const vehicles = planData.vehicles || [];
 

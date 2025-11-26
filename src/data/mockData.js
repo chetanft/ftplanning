@@ -254,7 +254,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'high',
-    status: 'unplanned',
+    status: 'planned',
     // Fragility and packaging fields
     fragilityScore: 2, // Durable
     packagingType: 'corrugated_box',
@@ -283,7 +283,7 @@ export const sampleOrders = [
     nesting: false,
     fragile: false,
     priority: 'medium',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 3,
     packagingType: 'metal_drum',
     materialProfile: 'LIQUID_STANDARD',
@@ -311,7 +311,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'low',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 4, // Fragile - electronics
     packagingType: 'foam_padded',
     materialProfile: 'ELECTRONICS_CONSUMER',
@@ -339,7 +339,7 @@ export const sampleOrders = [
     nesting: true,
     fragile: true,
     priority: 'high',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 5, // Extremely fragile
     packagingType: 'foam_padded',
     materialProfile: 'GLASS_CONTAINERS',
@@ -392,7 +392,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 4, // Fragile - pharmaceuticals
     packagingType: 'corrugated_box',
     materialProfile: 'PHARMA_STANDARD',
@@ -446,7 +446,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO009',
@@ -464,7 +464,7 @@ export const sampleOrders = [
     nesting: false,
     fragile: false,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO010',
@@ -533,7 +533,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 300,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO014',
@@ -585,7 +585,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO017',
@@ -602,7 +602,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 600,
     priority: 'low',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO018',
@@ -672,7 +672,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO022',
@@ -689,7 +689,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 800,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO023',
@@ -776,7 +776,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO028',
@@ -880,7 +880,7 @@ export const sampleOrders = [
     nesting: false,
     fragile: true,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO034',
@@ -932,7 +932,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO037',
@@ -984,7 +984,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1200,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO040',
@@ -1036,7 +1036,7 @@ export const sampleOrders = [
     nesting: false,
     fragile: true,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO043',
@@ -1070,7 +1070,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 1700,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO045',
@@ -1104,7 +1104,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 400,
     priority: 'low',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO047',
@@ -1191,7 +1191,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1800,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO052',
@@ -1209,7 +1209,7 @@ export const sampleOrders = [
     nesting: true,
     fragile: true,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO053',
@@ -1244,7 +1244,7 @@ export const sampleOrders = [
     nesting: false,
     fragile: false,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO055',
@@ -1261,7 +1261,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'low',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO056',
@@ -1295,7 +1295,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 850,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO058',
@@ -1312,7 +1312,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO059',
@@ -1381,7 +1381,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 1000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO063',
@@ -1415,7 +1415,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 200,
     priority: 'low',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO065',
@@ -1536,7 +1536,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1200,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO072',
@@ -1622,7 +1622,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1500,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO077',
@@ -1639,7 +1639,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO078',
@@ -1845,7 +1845,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1200,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO090',
@@ -2053,7 +2053,7 @@ export const sampleOrders = [
     stackable: false,
     maxStackHeight: 400,
     priority: 'medium',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO102',
@@ -2087,7 +2087,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 500,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO104',
@@ -2263,7 +2263,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1500,
     priority: 'low',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO114',
@@ -2436,7 +2436,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned'
+    status: 'planned'
   },
   {
     id: 'SO124',
@@ -2834,7 +2834,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 2000,
     priority: 'high',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 4,
     packagingType: 'foam_padded',
     materialProfile: 'ELECTRONICS_CONSUMER'
@@ -2942,7 +2942,7 @@ export const sampleOrders = [
     stackable: true,
     maxStackHeight: 1950,
     priority: 'medium',
-    status: 'unplanned',
+    status: 'planned',
     fragilityScore: 4,
     packagingType: 'foam_padded',
     materialProfile: 'ELECTRONICS_CONSUMER'
@@ -2989,6 +2989,2445 @@ export const sampleOrders = [
     fragilityScore: 2,
     packagingType: 'wooden_crate',
     materialProfile: 'GENERAL'
+  },
+  // Continue adding 100+ more orders to reach 250+ total
+  {
+    id: 'SO151',
+    doId: 'DO151',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 90,
+    seller: 'Fashion Apparel Ltd',
+    pickup: 'Delhi Textile Market',
+    delivery: 'Mumbai Fashion District',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 300, height: 150 },
+    weight: 4,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO152',
+    doId: 'DO152',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 35,
+    seller: 'Industrial Tools Corp',
+    pickup: 'Delhi Industrial Park',
+    delivery: 'Hyderabad Manufacturing Hub',
+    materialType: 'cuboidal',
+    dimensions: { length: 450, width: 350, height: 200 },
+    weight: 12,
+    stackable: true,
+    maxStackHeight: 1600,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO153',
+    doId: 'DO153',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 120,
+    seller: 'Book Publishers Inc',
+    pickup: 'Delhi Publishing House',
+    delivery: 'Chennai Distribution Center',
+    materialType: 'cuboidal',
+    dimensions: { length: 220, width: 150, height: 40 },
+    weight: 1.5,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO154',
+    doId: 'DO154',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 18,
+    seller: 'Chemical Solutions Ltd',
+    pickup: 'Delhi Chemical Complex',
+    delivery: 'Bangalore Research Lab',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 350, height: 600 },
+    weight: 28,
+    orientation: 'vertical',
+    nesting: false,
+    fragile: true,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO155',
+    doId: 'DO155',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 65,
+    seller: 'Household Goods Co',
+    pickup: 'Delhi Home Appliances',
+    delivery: 'Mumbai Retail Chain',
+    materialType: 'cuboidal',
+    dimensions: { length: 500, width: 400, height: 250 },
+    weight: 15,
+    stackable: true,
+    maxStackHeight: 1500,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO156',
+    doId: 'DO156',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 42,
+    seller: 'Metal Works Ltd',
+    pickup: 'Delhi Metal Factory',
+    delivery: 'Hyderabad Construction Site',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 300 },
+    weight: 35,
+    stackable: false,
+    maxStackHeight: 300,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO157',
+    doId: 'DO157',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 28,
+    seller: 'Oil Refinery Supplies',
+    pickup: 'Delhi Oil Depot',
+    delivery: 'Chennai Processing Plant',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 500, height: 800 },
+    weight: 45,
+    orientation: 'horizontal',
+    nesting: false,
+    fragile: false,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO158',
+    doId: 'DO158',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 85,
+    seller: 'Cosmetics Brand X',
+    pickup: 'Delhi Beauty Factory',
+    delivery: 'Bangalore Cosmetics Distributor',
+    materialType: 'cuboidal',
+    dimensions: { length: 200, width: 150, height: 100 },
+    weight: 2.5,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'planned'
+  },
+  {
+    id: 'SO159',
+    doId: 'DO159',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 22,
+    seller: 'Heavy Machinery Corp',
+    pickup: 'Delhi Machine Shop',
+    delivery: 'Mumbai Industrial Area',
+    materialType: 'cuboidal',
+    dimensions: { length: 1200, width: 900, height: 700 },
+    weight: 120,
+    stackable: false,
+    maxStackHeight: 700,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO160',
+    doId: 'DO160',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 95,
+    seller: 'Paper Products Ltd',
+    pickup: 'Delhi Paper Mill',
+    delivery: 'Hyderabad Printing Press',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 300, height: 120 },
+    weight: 6,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO161',
+    doId: 'DO161',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 45,
+    seller: 'Steel Pipes Manufacturer',
+    pickup: 'Delhi Steel Plant',
+    delivery: 'Chennai Construction Co',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 200, height: 3000 },
+    weight: 55,
+    orientation: 'horizontal',
+    nesting: false,
+    fragile: false,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO162',
+    doId: 'DO162',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 30,
+    seller: 'Medical Equipment Ltd',
+    pickup: 'Delhi Medical Devices',
+    delivery: 'Bangalore Hospital',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 300 },
+    weight: 18,
+    stackable: true,
+    maxStackHeight: 1500,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO163',
+    doId: 'DO163',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 75,
+    seller: 'Plastic Containers Inc',
+    pickup: 'Delhi Plastics Factory',
+    delivery: 'Mumbai Packaging Co',
+    materialType: 'cuboidal',
+    dimensions: { length: 350, width: 250, height: 180 },
+    weight: 5,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO164',
+    doId: 'DO164',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 18,
+    seller: 'Generator Company',
+    pickup: 'Delhi Power Equipment',
+    delivery: 'Hyderabad Factory',
+    materialType: 'cuboidal',
+    dimensions: { length: 1000, width: 700, height: 800 },
+    weight: 95,
+    stackable: false,
+    maxStackHeight: 800,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO165',
+    doId: 'DO165',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 110,
+    seller: 'Tea Packaging Ltd',
+    pickup: 'Delhi Tea Factory',
+    delivery: 'Chennai Distribution',
+    materialType: 'cuboidal',
+    dimensions: { length: 180, width: 120, height: 90 },
+    weight: 2,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO166',
+    doId: 'DO166',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 40,
+    seller: 'Computer Peripherals',
+    pickup: 'Delhi Tech Market',
+    delivery: 'Bangalore IT Company',
+    materialType: 'cuboidal',
+    dimensions: { length: 300, width: 200, height: 100 },
+    weight: 3,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO167',
+    doId: 'DO167',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 50,
+    seller: 'Rubber Products Co',
+    pickup: 'Delhi Rubber Factory',
+    delivery: 'Mumbai Industrial',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 150, height: 400 },
+    weight: 8,
+    orientation: 'vertical',
+    nesting: true,
+    fragile: false,
+    priority: 'medium',
+    status: 'planned'
+  },
+  {
+    id: 'SO168',
+    doId: 'DO168',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 25,
+    seller: 'Glass Manufacturing',
+    pickup: 'Delhi Glass Works',
+    delivery: 'Hyderabad Construction',
+    materialType: 'cuboidal',
+    dimensions: { length: 800, width: 600, height: 100 },
+    weight: 40,
+    stackable: true,
+    maxStackHeight: 500,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO169',
+    doId: 'DO169',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 15,
+    seller: 'Scientific Instruments',
+    pickup: 'Delhi Lab Equipment',
+    delivery: 'Chennai Research Institute',
+    materialType: 'cuboidal',
+    dimensions: { length: 500, width: 400, height: 250 },
+    weight: 12,
+    stackable: false,
+    maxStackHeight: 250,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO170',
+    doId: 'DO170',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 65,
+    seller: 'Toy Manufacturing Ltd',
+    pickup: 'Delhi Toy Factory',
+    delivery: 'Bangalore Toy Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 250, width: 200, height: 150 },
+    weight: 3,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO171',
+    doId: 'DO171',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 35,
+    seller: 'Paint Manufacturing',
+    pickup: 'Delhi Paint Factory',
+    delivery: 'Mumbai Hardware Store',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 250, height: 350 },
+    weight: 18,
+    orientation: 'vertical',
+    nesting: false,
+    fragile: false,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO172',
+    doId: 'DO172',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 55,
+    seller: 'Cable Manufacturing',
+    pickup: 'Delhi Cable Factory',
+    delivery: 'Hyderabad Electrical',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 80, height: 1500 },
+    weight: 20,
+    orientation: 'horizontal',
+    nesting: false,
+    fragile: false,
+    priority: 'medium',
+    status: 'planned'
+  },
+  {
+    id: 'SO173',
+    doId: 'DO173',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 90,
+    seller: 'Spice Processing Ltd',
+    pickup: 'Delhi Spice Market',
+    delivery: 'Chennai Food Processing',
+    materialType: 'cuboidal',
+    dimensions: { length: 300, width: 200, height: 150 },
+    weight: 8,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO174',
+    doId: 'DO174',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 28,
+    seller: 'Air Conditioner Parts',
+    pickup: 'Delhi AC Factory',
+    delivery: 'Bangalore Service Center',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 300 },
+    weight: 22,
+    stackable: false,
+    maxStackHeight: 300,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO175',
+    doId: 'DO175',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 80,
+    seller: 'Stationery Wholesale',
+    pickup: 'Delhi Stationery Market',
+    delivery: 'Mumbai Office Supplies',
+    materialType: 'cuboidal',
+    dimensions: { length: 250, width: 180, height: 100 },
+    weight: 2,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO176',
+    doId: 'DO176',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 20,
+    seller: 'Water Pump Company',
+    pickup: 'Delhi Pump Factory',
+    delivery: 'Hyderabad Industrial',
+    materialType: 'cuboidal',
+    dimensions: { length: 700, width: 500, height: 400 },
+    weight: 45,
+    stackable: false,
+    maxStackHeight: 400,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO177',
+    doId: 'DO177',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 45,
+    seller: 'Ceramic Tiles Ltd',
+    pickup: 'Delhi Tile Factory',
+    delivery: 'Chennai Building Materials',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 600, height: 60 },
+    weight: 25,
+    stackable: true,
+    maxStackHeight: 600,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO178',
+    doId: 'DO178',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 70,
+    seller: 'Mobile Phone Accessories',
+    pickup: 'Delhi Mobile Market',
+    delivery: 'Bangalore Phone Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 120, width: 80, height: 30 },
+    weight: 0.5,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO179',
+    doId: 'DO179',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 25,
+    seller: 'Furniture Components',
+    pickup: 'Delhi Wood Factory',
+    delivery: 'Mumbai Furniture Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 1000, width: 600, height: 400 },
+    weight: 30,
+    stackable: false,
+    maxStackHeight: 400,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO180',
+    doId: 'DO180',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 85,
+    seller: 'Organic Food Products',
+    pickup: 'Delhi Organic Farm',
+    delivery: 'Hyderabad Health Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 300, width: 200, height: 150 },
+    weight: 7,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO181',
+    doId: 'DO181',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 32,
+    seller: 'Industrial Chemicals',
+    pickup: 'Delhi Chemical Plant',
+    delivery: 'Chennai Manufacturing',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 400, height: 600 },
+    weight: 32,
+    orientation: 'vertical',
+    nesting: false,
+    fragile: true,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO182',
+    doId: 'DO182',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 55,
+    seller: 'Home Appliances Ltd',
+    pickup: 'Delhi Appliance Factory',
+    delivery: 'Bangalore Retail Chain',
+    materialType: 'cuboidal',
+    dimensions: { length: 450, width: 350, height: 200 },
+    weight: 12,
+    stackable: true,
+    maxStackHeight: 1600,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO183',
+    doId: 'DO183',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 40,
+    seller: 'Sports Equipment Co',
+    pickup: 'Delhi Sports Factory',
+    delivery: 'Mumbai Sports Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 800, width: 400, height: 250 },
+    weight: 20,
+    stackable: true,
+    maxStackHeight: 1250,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO184',
+    doId: 'DO184',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 18,
+    seller: 'Solar Panel Systems',
+    pickup: 'Delhi Solar Factory',
+    delivery: 'Hyderabad Energy Co',
+    materialType: 'cuboidal',
+    dimensions: { length: 1700, width: 1000, height: 50 },
+    weight: 30,
+    stackable: true,
+    maxStackHeight: 200,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO185',
+    doId: 'DO185',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 75,
+    seller: 'Herbal Products Ltd',
+    pickup: 'Delhi Herbal Factory',
+    delivery: 'Chennai Pharmacy',
+    materialType: 'cuboidal',
+    dimensions: { length: 150, width: 100, height: 80 },
+    weight: 1.5,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO186',
+    doId: 'DO186',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 25,
+    seller: 'Industrial Pumps',
+    pickup: 'Delhi Pump Manufacturer',
+    delivery: 'Bangalore Engineering',
+    materialType: 'cuboidal',
+    dimensions: { length: 800, width: 600, height: 500 },
+    weight: 55,
+    stackable: false,
+    maxStackHeight: 500,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO187',
+    doId: 'DO187',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 60,
+    seller: 'Packaging Materials',
+    pickup: 'Delhi Packaging Factory',
+    delivery: 'Mumbai Industrial',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 300, height: 200 },
+    weight: 6,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO188',
+    doId: 'DO188',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 35,
+    seller: 'Welding Equipment',
+    pickup: 'Delhi Welding Factory',
+    delivery: 'Hyderabad Fabrication',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 300 },
+    weight: 28,
+    stackable: false,
+    maxStackHeight: 300,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO189',
+    doId: 'DO189',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 50,
+    seller: 'Rice Processing Ltd',
+    pickup: 'Delhi Rice Mill',
+    delivery: 'Chennai Food Distribution',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 200 },
+    weight: 30,
+    stackable: true,
+    maxStackHeight: 1000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO190',
+    doId: 'DO190',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 90,
+    seller: 'Gift Items Wholesale',
+    pickup: 'Delhi Gift Market',
+    delivery: 'Bangalore Retail Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 200, width: 150, height: 100 },
+    weight: 2,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO191',
+    doId: 'DO191',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 30,
+    seller: 'Battery Manufacturing',
+    pickup: 'Delhi Battery Factory',
+    delivery: 'Mumbai Electronics',
+    materialType: 'cuboidal',
+    dimensions: { length: 300, width: 200, height: 150 },
+    weight: 8,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO192',
+    doId: 'DO192',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 22,
+    seller: 'Elevator Components',
+    pickup: 'Delhi Elevator Factory',
+    delivery: 'Hyderabad Construction',
+    materialType: 'cuboidal',
+    dimensions: { length: 900, width: 700, height: 600 },
+    weight: 75,
+    stackable: false,
+    maxStackHeight: 600,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO193',
+    doId: 'DO193',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 65,
+    seller: 'Coffee Processing Ltd',
+    pickup: 'Delhi Coffee Roaster',
+    delivery: 'Chennai Cafe Chain',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 300, height: 200 },
+    weight: 15,
+    stackable: true,
+    maxStackHeight: 1600,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO194',
+    doId: 'DO194',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 45,
+    seller: 'Industrial Fans Ltd',
+    pickup: 'Delhi Fan Factory',
+    delivery: 'Bangalore Industrial',
+    materialType: 'cuboidal',
+    dimensions: { length: 700, width: 700, height: 250 },
+    weight: 18,
+    stackable: true,
+    maxStackHeight: 1000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO195',
+    doId: 'DO195',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 55,
+    seller: 'Plastic Bottles Ltd',
+    pickup: 'Delhi Plastics Plant',
+    delivery: 'Mumbai Beverage Co',
+    materialType: 'cylindrical',
+    dimensions: { diameter: 100, height: 300 },
+    weight: 2,
+    orientation: 'vertical',
+    nesting: true,
+    fragile: false,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO196',
+    doId: 'DO196',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 40,
+    seller: 'Security Systems',
+    pickup: 'Delhi Security Factory',
+    delivery: 'Hyderabad Corporate',
+    materialType: 'cuboidal',
+    dimensions: { length: 500, width: 400, height: 200 },
+    weight: 14,
+    stackable: true,
+    maxStackHeight: 1600,
+    priority: 'high',
+    status: 'planned'
+  },
+  {
+    id: 'SO197',
+    doId: 'DO197',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 28,
+    seller: 'Marine Equipment',
+    pickup: 'Delhi Marine Supplies',
+    delivery: 'Chennai Shipyard',
+    materialType: 'cuboidal',
+    dimensions: { length: 800, width: 600, height: 400 },
+    weight: 35,
+    stackable: false,
+    maxStackHeight: 400,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO198',
+    doId: 'DO198',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 80,
+    seller: 'Educational Supplies',
+    pickup: 'Delhi Education Market',
+    delivery: 'Bangalore School District',
+    materialType: 'cuboidal',
+    dimensions: { length: 300, width: 200, height: 100 },
+    weight: 4,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'low',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO199',
+    doId: 'DO199',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 35,
+    seller: 'Power Tools Ltd',
+    pickup: 'Delhi Tool Factory',
+    delivery: 'Mumbai Hardware',
+    materialType: 'cuboidal',
+    dimensions: { length: 350, width: 250, height: 150 },
+    weight: 10,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO200',
+    doId: 'DO200',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 50,
+    seller: 'Agricultural Equipment',
+    pickup: 'Delhi Agri Machinery',
+    delivery: 'Hyderabad Farm Co',
+    materialType: 'cuboidal',
+    dimensions: { length: 1200, width: 800, height: 600 },
+    weight: 80,
+    stackable: false,
+    maxStackHeight: 600,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO201',
+    doId: 'DO201',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 42,
+    seller: 'Leather Goods Manufacturer',
+    pickup: 'Delhi Leather Factory',
+    delivery: 'Chennai Export',
+    materialType: 'cuboidal',
+    dimensions: { length: 450, width: 350, height: 150 },
+    weight: 6,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO202',
+    doId: 'DO202',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 25,
+    seller: 'Medical Devices Ltd',
+    pickup: 'Delhi Medical Equipment',
+    delivery: 'Bangalore Healthcare',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 300, height: 200 },
+    weight: 8,
+    stackable: true,
+    maxStackHeight: 1600,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO203',
+    doId: 'DO203',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 70,
+    seller: 'Kitchenware Manufacturer',
+    pickup: 'Delhi Kitchen Factory',
+    delivery: 'Mumbai Home Store',
+    materialType: 'cuboidal',
+    dimensions: { length: 350, width: 250, height: 180 },
+    weight: 5,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO204',
+    doId: 'DO204',
+    route: 'DEL-HYD',
+    routeName: 'Delhi → Hyderabad',
+    quantity: 30,
+    seller: 'Construction Materials',
+    pickup: 'Delhi Cement Plant',
+    delivery: 'Hyderabad Building Site',
+    materialType: 'cuboidal',
+    dimensions: { length: 600, width: 400, height: 200 },
+    weight: 50,
+    stackable: true,
+    maxStackHeight: 1000,
+    priority: 'medium',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO205',
+    doId: 'DO205',
+    route: 'DEL-CHE',
+    routeName: 'Delhi → Chennai',
+    quantity: 55,
+    seller: 'Textile Machinery',
+    pickup: 'Delhi Textile Equipment',
+    delivery: 'Chennai Textile Mill',
+    materialType: 'cuboidal',
+    dimensions: { length: 1000, width: 700, height: 500 },
+    weight: 60,
+    stackable: false,
+    maxStackHeight: 500,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO206',
+    doId: 'DO206',
+    route: 'DEL-BAN',
+    routeName: 'Delhi → Bangalore',
+    quantity: 38,
+    seller: 'IT Hardware Components',
+    pickup: 'Delhi Computer Parts',
+    delivery: 'Bangalore Assembly Plant',
+    materialType: 'cuboidal',
+    dimensions: { length: 250, width: 180, height: 80 },
+    weight: 2,
+    stackable: true,
+    maxStackHeight: 2000,
+    priority: 'high',
+    status: 'unplanned'
+  },
+  {
+    id: 'SO207',
+    doId: 'DO207',
+    route: 'DEL-MUM',
+    routeName: 'Delhi → Mumbai',
+    quantity: 45,
+    seller: 'Footwear Manufacturer',
+    pickup: 'Delhi Shoe Factory',
+    delivery: 'Mumbai Retail Chain',
+    materialType: 'cuboidal',
+    dimensions: { length: 400, width: 250, height: 150 },
+    weight: 4,
+    stackable: true,
+    maxStackHeight: 1800,
+    priority: 'medium',
+    status: 'unplanned'
+  }
+];
+
+// Perfect sample plans with optimal metrics for demonstrating AI capabilities
+export const perfectSamplePlans = [
+  {
+    id: 'PLAN-001',
+    orders: [
+      { id: 'SO001', doId: 'DO001', route: 'DEL-MUM', quantity: 50, seller: 'ABC Corp', customer: 'Mumbai Central Retail', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 300 }, weight: 25, status: 'planned' },
+      { id: 'SO008', doId: 'DO008', route: 'DEL-MUM', quantity: 45, seller: 'Fresh Foods Ltd', customer: 'Mumbai Market', materialType: 'cuboidal', dimensions: { length: 500, width: 350, height: 250 }, weight: 12, status: 'planned' },
+      { id: 'SO036', doId: 'DO036', route: 'DEL-MUM', quantity: 80, seller: 'Snack Foods', customer: 'Mumbai Supermarket Chain', materialType: 'cuboidal', dimensions: { length: 300, width: 200, height: 150 }, weight: 6, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['all']
+    },
+    vehicles: [{
+      type: 'EICHER_14FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO001', quantity: 50 },
+        { id: 'SO008', quantity: 45 },
+        { id: 'SO036', quantity: 80 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO001', quantity: 50, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO008', quantity: 45, position: { x: 0, y: 0, z: 900 } },
+          { id: 'SO036', quantity: 80, position: { x: 0, y: 0, z: 1150 } }
+        ],
+        metrics: {
+          volumeUtilization: 98.5,
+          weightUtilization: 97.2,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1400,
+        duration: 18,
+        cost: 5880, // 1400km * 18 INR/km * 2.33 (fuel + maintenance factor)
+        fuelConsumption: 210,
+        tolls: 1200,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_14FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 5880,
+    totalDistance: 1400,
+    totalDuration: 18,
+    costBreakdown: {
+      fuel: 4200,
+      tolls: 1200,
+      maintenance: 480
+    },
+    totalWeight: 4475,
+    totalVolume: 37.4,
+    createdAt: '2024-11-26T08:00:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.5,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-002',
+    orders: [
+      { id: 'SO003', doId: 'DO003', route: 'DEL-HYD', quantity: 100, seller: 'PQR Industries', customer: 'Hyderabad Tech Solutions', materialType: 'cuboidal', dimensions: { length: 400, width: 300, height: 200 }, weight: 8, status: 'planned' },
+      { id: 'SO021', doId: 'DO021', route: 'DEL-HYD', quantity: 60, seller: 'Plastic Containers', customer: 'Hyderabad Packaging', materialType: 'cuboidal', dimensions: { length: 300, width: 200, height: 150 }, weight: 4, status: 'planned' },
+      { id: 'SO101', doId: 'DO101', route: 'DEL-HYD', quantity: 42, seller: 'Ceiling Fans', customer: 'Hyderabad Electrical Store', materialType: 'cuboidal', dimensions: { length: 1200, width: 1200, height: 400 }, weight: 12, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'volume',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['all']
+    },
+    vehicles: [{
+      type: 'EICHER_17FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO003', quantity: 100 },
+        { id: 'SO021', quantity: 60 },
+        { id: 'SO101', quantity: 42 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO003', quantity: 100, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO021', quantity: 60, position: { x: 0, y: 0, z: 600 } },
+          { id: 'SO101', quantity: 42, position: { x: 0, y: 0, z: 750 } }
+        ],
+        metrics: {
+          volumeUtilization: 99.2,
+          weightUtilization: 95.8,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8100,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_17FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8100,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 600
+    },
+    totalWeight: 3588,
+    totalVolume: 38.1,
+    createdAt: '2024-11-26T09:15:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.8,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-003',
+    orders: [
+      { id: 'SO006', doId: 'DO006', route: 'DEL-MUM', quantity: 80, seller: 'Pharma Solutions', customer: 'Mumbai Medical District', materialType: 'cuboidal', dimensions: { length: 300, width: 200, height: 150 }, weight: 5, temperatureControlled: true, status: 'planned' },
+      { id: 'SO042', doId: 'DO042', route: 'DEL-CHE', quantity: 16, seller: 'Oxygen Cylinders', customer: 'Chennai Hospital', materialType: 'cylindrical', dimensions: { diameter: 140, height: 1370 }, weight: 55, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal', 'cylindrical'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'combined',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 2,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'REFRIGERATED_14FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO006', quantity: 80 },
+        { id: 'SO042', quantity: 16 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO006', quantity: 80, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO042', quantity: 16, position: { x: 0, y: 0, z: 225 } }
+        ],
+        metrics: {
+          volumeUtilization: 96.7,
+          weightUtilization: 92.4,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1800,
+        duration: 24,
+        cost: 12960,
+        fuelConsumption: 360,
+        tolls: 2400,
+        stops: 2
+      }
+    }],
+    vehicleConfig: [{
+      type: 'REFRIGERATED_14FT',
+      quantity: 1
+    }],
+    dropPoints: 2,
+    routeStrategy: 'combined',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: true,
+    totalCost: 12960,
+    totalDistance: 1800,
+    totalDuration: 24,
+    costBreakdown: {
+      fuel: 8640,
+      tolls: 2400,
+      maintenance: 960,
+      refrigeration: 960
+    },
+    totalWeight: 2080,
+    totalVolume: 37.2,
+    createdAt: '2024-11-26T10:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 99.2,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-004',
+    orders: [
+      { id: 'SO004', doId: 'DO004', route: 'DEL-BAN', quantity: 15, seller: 'Tech Solutions', customer: 'Bangalore Electronics Hub', materialType: 'cylindrical', dimensions: { diameter: 250, height: 800 }, weight: 12, fragile: true, status: 'planned' },
+      { id: 'SO039', doId: 'DO039', route: 'DEL-BAN', quantity: 32, seller: 'Computer Monitors', customer: 'Bangalore IT Company', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 150 }, weight: 8, status: 'planned' },
+      { id: 'SO103', doId: 'DO103', route: 'DEL-BAN', quantity: 31, seller: 'Tablet Computers', customer: 'Bangalore Tech Store', materialType: 'cuboidal', dimensions: { length: 250, width: 180, height: 10 }, weight: 1, status: 'planned' }
+    ],
+    materialTypes: ['cylindrical', 'cuboidal'],
+    constraints: {
+      optimizationPriority: 'fragility',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'AIR_RIDE_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO004', quantity: 15 },
+        { id: 'SO039', quantity: 32 },
+        { id: 'SO103', quantity: 31 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO004', quantity: 15, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO039', quantity: 32, position: { x: 0, y: 0, z: 800 } },
+          { id: 'SO103', quantity: 31, position: { x: 0, y: 0, z: 950 } }
+        ],
+        metrics: {
+          volumeUtilization: 97.8,
+          weightUtilization: 94.5,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 2100,
+        duration: 26,
+        cost: 16800,
+        fuelConsumption: 420,
+        tolls: 3000,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'AIR_RIDE_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 16800,
+    totalDistance: 2100,
+    totalDuration: 26,
+    costBreakdown: {
+      fuel: 12600,
+      tolls: 3000,
+      maintenance: 840,
+      airRide: 360
+    },
+    totalWeight: 1267,
+    totalVolume: 37.6,
+    createdAt: '2024-11-26T11:45:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.7,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-005',
+    orders: [
+      { id: 'SO009', doId: 'DO009', route: 'DEL-HYD', quantity: 8, seller: 'Steel Pipes Co', customer: 'Hyderabad Construction', materialType: 'cylindrical', dimensions: { diameter: 150, height: 3000 }, weight: 45, status: 'planned' },
+      { id: 'SO013', doId: 'DO013', route: 'DEL-HYD', quantity: 15, seller: 'Auto Parts Ltd', customer: 'Hyderabad Assembly Plant', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 300 }, weight: 18, status: 'planned' },
+      { id: 'SO017', doId: 'DO017', route: 'DEL-HYD', quantity: 25, seller: 'Furniture Makers', customer: 'Hyderabad Showroom', materialType: 'cuboidal', dimensions: { length: 1200, width: 800, height: 600 }, weight: 22, status: 'planned' }
+    ],
+    materialTypes: ['cylindrical', 'cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['medium']
+    },
+    vehicles: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO009', quantity: 8 },
+        { id: 'SO013', quantity: 15 },
+        { id: 'SO017', quantity: 25 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO009', quantity: 8, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO013', quantity: 15, position: { x: 0, y: 0, z: 3000 } },
+          { id: 'SO017', quantity: 25, position: { x: 0, y: 0, z: 3300 } }
+        ],
+        metrics: {
+          volumeUtilization: 98.9,
+          weightUtilization: 96.3,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8400,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8400,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 900
+    },
+    totalWeight: 2870,
+    totalVolume: 38.0,
+    createdAt: '2024-11-26T12:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.5,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-006',
+    orders: [
+      { id: 'SO016', doId: 'DO016', route: 'DEL-MUM', quantity: 75, seller: 'Electronics Corp', customer: 'Mumbai Tech Park', materialType: 'cuboidal', dimensions: { length: 350, width: 250, height: 150 }, weight: 6, status: 'planned' },
+      { id: 'SO052', doId: 'DO052', route: 'DEL-MUM', quantity: 36, seller: 'Glass Bottles', customer: 'Mumbai Beverage Company', materialType: 'cylindrical', dimensions: { diameter: 80, height: 250 }, weight: 3, fragile: true, status: 'planned' },
+      { id: 'SO076', doId: 'DO076', route: 'DEL-MUM', quantity: 33, seller: 'Power Tools', customer: 'Mumbai Hardware Store', materialType: 'cuboidal', dimensions: { length: 400, width: 300, height: 150 }, weight: 8, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal', 'cylindrical'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['medium']
+    },
+    vehicles: [{
+      type: 'EICHER_14FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO016', quantity: 75 },
+        { id: 'SO052', quantity: 36 },
+        { id: 'SO076', quantity: 33 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO016', quantity: 75, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO052', quantity: 36, position: { x: 0, y: 0, z: 225 } },
+          { id: 'SO076', quantity: 33, position: { x: 0, y: 0, z: 475 } }
+        ],
+        metrics: {
+          volumeUtilization: 99.1,
+          weightUtilization: 95.7,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1400,
+        duration: 18,
+        cost: 5880,
+        fuelConsumption: 210,
+        tolls: 1200,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_14FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 5880,
+    totalDistance: 1400,
+    totalDuration: 18,
+    costBreakdown: {
+      fuel: 4200,
+      tolls: 1200,
+      maintenance: 480
+    },
+    totalWeight: 2199,
+    totalVolume: 38.1,
+    createdAt: '2024-11-26T13:15:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.9,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-007',
+    orders: [
+      { id: 'SO022', doId: 'DO022', route: 'DEL-CHE', quantity: 12, seller: 'Heavy Machinery', customer: 'Chennai Factory', materialType: 'cuboidal', dimensions: { length: 1500, width: 1000, height: 800 }, weight: 85, status: 'planned' },
+      { id: 'SO054', doId: 'DO054', route: 'DEL-CHE', quantity: 22, seller: 'Steel Rods', customer: 'Chennai Construction', materialType: 'cylindrical', dimensions: { diameter: 25, height: 6000 }, weight: 40, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal', 'cylindrical'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO022', quantity: 12 },
+        { id: 'SO054', quantity: 22 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO022', quantity: 12, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO054', quantity: 22, position: { x: 0, y: 0, z: 800 } }
+        ],
+        metrics: {
+          volumeUtilization: 97.3,
+          weightUtilization: 98.5,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 2200,
+        duration: 28,
+        cost: 15840,
+        fuelConsumption: 660,
+        tolls: 3300,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 15840,
+    totalDistance: 2200,
+    totalDuration: 28,
+    costBreakdown: {
+      fuel: 11880,
+      tolls: 3300,
+      maintenance: 660
+    },
+    totalWeight: 3680,
+    totalVolume: 53.8,
+    createdAt: '2024-11-26T14:00:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 96.8,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-008',
+    orders: [
+      { id: 'SO027', doId: 'DO027', route: 'DEL-BAN', quantity: 85, seller: 'Mobile Accessories', customer: 'Bangalore Tech Mall', materialType: 'cuboidal', dimensions: { length: 150, width: 100, height: 50 }, weight: 1, status: 'planned' },
+      { id: 'SO051', doId: 'DO051', route: 'DEL-BAN', quantity: 75, seller: 'Protein Supplements', customer: 'Bangalore Fitness Stores', materialType: 'cuboidal', dimensions: { length: 200, width: 150, height: 300 }, weight: 5, status: 'planned' },
+      { id: 'SO055', doId: 'DO055', route: 'DEL-BAN', quantity: 120, seller: 'Greeting Cards', customer: 'Bangalore Gift Shops', materialType: 'cuboidal', dimensions: { length: 150, width: 100, height: 20 }, weight: 0.5, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'volume',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['low']
+    },
+    vehicles: [{
+      type: 'EICHER_17FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO027', quantity: 85 },
+        { id: 'SO051', quantity: 75 },
+        { id: 'SO055', quantity: 120 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO027', quantity: 85, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO051', quantity: 75, position: { x: 0, y: 0, z: 50 } },
+          { id: 'SO055', quantity: 120, position: { x: 0, y: 0, z: 350 } }
+        ],
+        metrics: {
+          volumeUtilization: 99.7,
+          weightUtilization: 89.2,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 2100,
+        duration: 26,
+        cost: 11340,
+        fuelConsumption: 420,
+        tolls: 3000,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_17FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 11340,
+    totalDistance: 2100,
+    totalDuration: 26,
+    costBreakdown: {
+      fuel: 7560,
+      tolls: 3000,
+      maintenance: 780
+    },
+    totalWeight: 1262.5,
+    totalVolume: 37.0,
+    createdAt: '2024-11-26T15:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 99.1,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-009',
+    orders: [
+      { id: 'SO033', doId: 'DO033', route: 'DEL-HYD', quantity: 14, seller: 'Chemical Drums', customer: 'Hyderabad Processing Unit', materialType: 'cylindrical', dimensions: { diameter: 450, height: 750 }, weight: 38, fragile: true, status: 'planned' },
+      { id: 'SO057', doId: 'DO057', route: 'DEL-HYD', quantity: 18, seller: 'Washing Machines', customer: 'Hyderabad Electronics Mall', materialType: 'cuboidal', dimensions: { length: 600, width: 600, height: 850 }, weight: 70, status: 'planned' }
+    ],
+    materialTypes: ['cylindrical', 'cuboidal'],
+    constraints: {
+      optimizationPriority: 'fragility',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'AIR_RIDE_REEFER',
+      quantity: 1,
+      orders: [
+        { id: 'SO033', quantity: 14 },
+        { id: 'SO057', quantity: 18 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO033', quantity: 14, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO057', quantity: 18, position: { x: 0, y: 0, z: 750 } }
+        ],
+        metrics: {
+          volumeUtilization: 95.6,
+          weightUtilization: 92.8,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 16500,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'AIR_RIDE_REEFER',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 16500,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 10500,
+      tolls: 1500,
+      maintenance: 900,
+      refrigeration: 3000,
+      airRide: 600
+    },
+    totalWeight: 2056,
+    totalVolume: 20.8,
+    createdAt: '2024-11-26T16:45:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.3,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-010',
+    orders: [
+      { id: 'SO044', doId: 'DO044', route: 'DEL-MUM', quantity: 12, seller: 'Refrigerators', customer: 'Mumbai Electronics Store', materialType: 'cuboidal', dimensions: { length: 600, width: 650, height: 1700 }, weight: 65, status: 'planned' },
+      { id: 'SO068', doId: 'DO068', route: 'DEL-MUM', quantity: 14, seller: 'Water Purifiers', customer: 'Mumbai Home Appliances', materialType: 'cuboidal', dimensions: { length: 450, width: 350, height: 500 }, weight: 25, status: 'planned' },
+      { id: 'SO071', doId: 'DO071', route: 'DEL-MUM', quantity: 16, seller: 'Microwave Ovens', customer: 'Bangalore Home Store', materialType: 'cuboidal', dimensions: { length: 500, width: 400, height: 300 }, weight: 18, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO044', quantity: 12 },
+        { id: 'SO068', quantity: 14 },
+        { id: 'SO071', quantity: 16 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO044', quantity: 12, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO068', quantity: 14, position: { x: 0, y: 0, z: 1700 } },
+          { id: 'SO071', quantity: 16, position: { x: 0, y: 0, z: 2200 } }
+        ],
+        metrics: {
+          volumeUtilization: 97.4,
+          weightUtilization: 99.1,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1400,
+        duration: 18,
+        cost: 7840,
+        fuelConsumption: 280,
+        tolls: 1200,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 7840,
+    totalDistance: 1400,
+    totalDuration: 18,
+    costBreakdown: {
+      fuel: 5600,
+      tolls: 1200,
+      maintenance: 1040
+    },
+    totalWeight: 3468,
+    totalVolume: 31.5,
+    createdAt: '2024-11-26T17:20:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.9,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-011',
+    orders: [
+      { id: 'SO046', doId: 'DO046', route: 'DEL-CHE', quantity: 38, seller: 'Wooden Furniture', customer: 'Chennai Home Store', materialType: 'cuboidal', dimensions: { length: 1800, width: 800, height: 400 }, weight: 30, status: 'planned' },
+      { id: 'SO058', doId: 'DO058', route: 'DEL-CHE', quantity: 85, seller: 'Ayurvedic Medicines', customer: 'Chennai Pharmacy Chain', materialType: 'cuboidal', dimensions: { length: 120, width: 80, height: 60 }, weight: 2, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'volume',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['medium']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO046', quantity: 38 },
+        { id: 'SO058', quantity: 85 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO046', quantity: 38, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO058', quantity: 85, position: { x: 0, y: 0, z: 400 } }
+        ],
+        metrics: {
+          volumeUtilization: 98.7,
+          weightUtilization: 94.3,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 2200,
+        duration: 28,
+        cost: 15840,
+        fuelConsumption: 660,
+        tolls: 3300,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 15840,
+    totalDistance: 2200,
+    totalDuration: 28,
+    costBreakdown: {
+      fuel: 11880,
+      tolls: 3300,
+      maintenance: 660
+    },
+    totalWeight: 3190,
+    totalVolume: 52.8,
+    createdAt: '2024-11-26T18:10:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.4,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-012',
+    orders: [
+      { id: 'SO062', doId: 'DO062', route: 'DEL-CHE', quantity: 15, seller: 'Generator Sets', customer: 'Chennai Industrial Area', materialType: 'cuboidal', dimensions: { length: 1200, width: 800, height: 1000 }, weight: 150, status: 'planned' },
+      { id: 'SO064', doId: 'DO064', route: 'DEL-MUM', quantity: 14, seller: 'Musical Instruments', customer: 'Mumbai Music Academy', materialType: 'cuboidal', dimensions: { length: 1000, width: 400, height: 200 }, weight: 12, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'combined',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 2,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO062', quantity: 15 },
+        { id: 'SO064', quantity: 14 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO062', quantity: 15, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO064', quantity: 14, position: { x: 0, y: 0, z: 1000 } }
+        ],
+        metrics: {
+          volumeUtilization: 96.2,
+          weightUtilization: 97.8,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1800,
+        duration: 24,
+        cost: 12960,
+        fuelConsumption: 540,
+        tolls: 2700,
+        stops: 2
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 2,
+    routeStrategy: 'combined',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: true,
+    totalCost: 12960,
+    totalDistance: 1800,
+    totalDuration: 24,
+    costBreakdown: {
+      fuel: 9720,
+      tolls: 2700,
+      maintenance: 540
+    },
+    totalWeight: 2790,
+    totalVolume: 51.2,
+    createdAt: '2024-11-26T19:00:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.1,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-013',
+    orders: [
+      { id: 'SO077', doId: 'DO077', route: 'DEL-HYD', quantity: 19, seller: 'Inverters', customer: 'Hyderabad Electronics', materialType: 'cuboidal', dimensions: { length: 400, width: 250, height: 100 }, weight: 12, status: 'planned' },
+      { id: 'SO089', doId: 'DO089', route: 'DEL-HYD', quantity: 21, seller: 'Printers', customer: 'Hyderabad Office Supply', materialType: 'cuboidal', dimensions: { length: 450, width: 350, height: 200 }, weight: 12, status: 'planned' },
+      { id: 'SO113', doId: 'DO113', route: 'DEL-HYD', quantity: 37, seller: 'Table Lamps', customer: 'Hyderabad Home Decor', materialType: 'cuboidal', dimensions: { length: 300, width: 300, height: 500 }, weight: 6, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'volume',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'EICHER_17FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO077', quantity: 19 },
+        { id: 'SO089', quantity: 21 },
+        { id: 'SO113', quantity: 37 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO077', quantity: 19, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO089', quantity: 21, position: { x: 0, y: 0, z: 100 } },
+          { id: 'SO113', quantity: 37, position: { x: 0, y: 0, z: 300 } }
+        ],
+        metrics: {
+          volumeUtilization: 99.3,
+          weightUtilization: 93.7,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8100,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_17FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8100,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 600
+    },
+    totalWeight: 1429,
+    totalVolume: 37.8,
+    createdAt: '2024-11-26T20:15:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.6,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-014',
+    orders: [
+      { id: 'SO089', doId: 'DO089', route: 'DEL-HYD', quantity: 21, seller: 'Printers', customer: 'Hyderabad Office Supply', materialType: 'cuboidal', dimensions: { length: 450, width: 350, height: 200 }, weight: 12, status: 'planned' },
+      { id: 'SO123', doId: 'DO123', route: 'DEL-BAN', quantity: 25, seller: 'Smart Watches', customer: 'Bangalore Tech Store', materialType: 'cuboidal', dimensions: { length: 100, width: 80, height: 50 }, weight: 1, status: 'planned' },
+      { id: 'SO143', doId: 'DO143', route: 'DEL-HYD', quantity: 48, seller: 'IT Hardware Components', customer: 'Hyderabad Corporate', materialType: 'cuboidal', dimensions: { length: 250, width: 180, height: 80 }, weight: 2, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'combined',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 2,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'EICHER_17FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO089', quantity: 21 },
+        { id: 'SO123', quantity: 25 },
+        { id: 'SO143', quantity: 48 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO089', quantity: 21, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO123', quantity: 25, position: { x: 0, y: 0, z: 200 } },
+          { id: 'SO143', quantity: 48, position: { x: 0, y: 0, z: 250 } }
+        ],
+        metrics: {
+          volumeUtilization: 98.9,
+          weightUtilization: 91.4,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1800,
+        duration: 24,
+        cost: 9720,
+        fuelConsumption: 360,
+        tolls: 2700,
+        stops: 2
+      }
+    }],
+    vehicleConfig: [{
+      type: 'EICHER_17FT',
+      quantity: 1
+    }],
+    dropPoints: 2,
+    routeStrategy: 'combined',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: true,
+    totalCost: 9720,
+    totalDistance: 1800,
+    totalDuration: 24,
+    costBreakdown: {
+      fuel: 6840,
+      tolls: 2700,
+      maintenance: 180
+    },
+    totalWeight: 1229,
+    totalVolume: 37.5,
+    createdAt: '2024-11-26T21:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 99.0,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-015',
+    orders: [
+      { id: 'SO148', doId: 'DO148', route: 'DEL-HYD', quantity: 55, seller: 'Electronics Wholesale Co', customer: 'Hyderabad Tech Solutions', materialType: 'cuboidal', dimensions: { length: 360, width: 270, height: 170 }, weight: 6.5, status: 'planned' },
+      { id: 'SO152', doId: 'DO152', route: 'DEL-HYD', quantity: 35, seller: 'Industrial Tools Corp', customer: 'Hyderabad Manufacturing Hub', materialType: 'cuboidal', dimensions: { length: 450, width: 350, height: 200 }, weight: 12, status: 'planned' },
+      { id: 'SO158', doId: 'DO158', route: 'DEL-HYD', quantity: 42, seller: 'Metal Works Ltd', customer: 'Hyderabad Construction Site', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 300 }, weight: 35, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['medium']
+    },
+    vehicles: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO148', quantity: 55 },
+        { id: 'SO152', quantity: 35 },
+        { id: 'SO158', quantity: 42 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO148', quantity: 55, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO152', quantity: 35, position: { x: 0, y: 0, z: 170 } },
+          { id: 'SO158', quantity: 42, position: { x: 0, y: 0, z: 370 } }
+        ],
+        metrics: {
+          volumeUtilization: 99.5,
+          weightUtilization: 96.8,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8400,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8400,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 900
+    },
+    totalWeight: 3749,
+    totalVolume: 32.8,
+    createdAt: '2024-11-26T22:45:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.2,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-016',
+    orders: [
+      { id: 'SO159', doId: 'DO159', route: 'DEL-MUM', quantity: 25, seller: 'Heavy Machinery Corp', customer: 'Mumbai Industrial Area', materialType: 'cuboidal', dimensions: { length: 1200, width: 900, height: 700 }, weight: 120, status: 'planned' },
+      { id: 'SO162', doId: 'DO162', route: 'DEL-BAN', quantity: 20, seller: 'Medical Equipment Ltd', customer: 'Bangalore Hospital', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 300 }, weight: 18, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'combined',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 2,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO159', quantity: 25 },
+        { id: 'SO162', quantity: 20 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO159', quantity: 25, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO162', quantity: 20, position: { x: 0, y: 0, z: 700 } }
+        ],
+        metrics: {
+          volumeUtilization: 95.8,
+          weightUtilization: 99.2,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1750,
+        duration: 23,
+        cost: 12600,
+        fuelConsumption: 525,
+        tolls: 2625,
+        stops: 2
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 2,
+    routeStrategy: 'combined',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: true,
+    totalCost: 12600,
+    totalDistance: 1750,
+    totalDuration: 23,
+    costBreakdown: {
+      fuel: 9450,
+      tolls: 2625,
+      maintenance: 525
+    },
+    totalWeight: 3660,
+    totalVolume: 51.9,
+    createdAt: '2024-11-27T08:00:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 96.9,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-017',
+    orders: [
+      { id: 'SO164', doId: 'DO164', route: 'DEL-HYD', quantity: 18, seller: 'Generator Company', customer: 'Hyderabad Factory', materialType: 'cuboidal', dimensions: { length: 1000, width: 700, height: 800 }, weight: 95, status: 'planned' },
+      { id: 'SO167', doId: 'DO167', route: 'DEL-HYD', quantity: 24, seller: 'Glass Manufacturing', customer: 'Hyderabad Construction', materialType: 'cuboidal', dimensions: { length: 800, width: 600, height: 100 }, weight: 40, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO164', quantity: 18 },
+        { id: 'SO167', quantity: 24 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO164', quantity: 18, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO167', quantity: 24, position: { x: 0, y: 0, z: 800 } }
+        ],
+        metrics: {
+          volumeUtilization: 97.1,
+          weightUtilization: 98.7,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8400,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8400,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 900
+    },
+    totalWeight: 3030,
+    totalVolume: 31.8,
+    createdAt: '2024-11-27T09:15:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.4,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-018',
+    orders: [
+      { id: 'SO169', doId: 'DO169', route: 'DEL-CHE', quantity: 15, seller: 'Scientific Instruments', customer: 'Chennai Research Institute', materialType: 'cuboidal', dimensions: { length: 500, width: 400, height: 250 }, weight: 12, status: 'planned' },
+      { id: 'SO172', doId: 'DO172', route: 'DEL-CHE', quantity: 38, seller: 'Cable Manufacturing', customer: 'Chennai Electrical', materialType: 'cylindrical', dimensions: { diameter: 80, height: 1500 }, weight: 20, status: 'planned' },
+      { id: 'SO176', doId: 'DO176', route: 'DEL-CHE', quantity: 20, seller: 'Water Pump Company', customer: 'Chennai Industrial', materialType: 'cuboidal', dimensions: { length: 700, width: 500, height: 400 }, weight: 45, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal', 'cylindrical'],
+    constraints: {
+      optimizationPriority: 'volume',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO169', quantity: 15 },
+        { id: 'SO172', quantity: 38 },
+        { id: 'SO176', quantity: 20 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO169', quantity: 15, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO172', quantity: 38, position: { x: 0, y: 0, z: 250 } },
+          { id: 'SO176', quantity: 20, position: { x: 0, y: 0, z: 1750 } }
+        ],
+        metrics: {
+          volumeUtilization: 98.4,
+          weightUtilization: 95.6,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 2200,
+        duration: 28,
+        cost: 15840,
+        fuelConsumption: 660,
+        tolls: 3300,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 15840,
+    totalDistance: 2200,
+    totalDuration: 28,
+    costBreakdown: {
+      fuel: 11880,
+      tolls: 3300,
+      maintenance: 660
+    },
+    totalWeight: 3350,
+    totalVolume: 52.1,
+    createdAt: '2024-11-27T10:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 98.1,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-019',
+    orders: [
+      { id: 'SO184', doId: 'DO184', route: 'DEL-HYD', quantity: 18, seller: 'Solar Panel Systems', customer: 'Hyderabad Energy Co', materialType: 'cuboidal', dimensions: { length: 1700, width: 1000, height: 50 }, weight: 30, status: 'planned' },
+      { id: 'SO188', doId: 'DO188', route: 'DEL-HYD', quantity: 35, seller: 'Welding Equipment', customer: 'Hyderabad Fabrication', materialType: 'cuboidal', dimensions: { length: 600, width: 400, height: 300 }, weight: 28, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'all',
+      routeStrategy: 'separate',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 1,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO184', quantity: 18 },
+        { id: 'SO188', quantity: 35 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO184', quantity: 18, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO188', quantity: 35, position: { x: 0, y: 0, z: 50 } }
+        ],
+        metrics: {
+          volumeUtilization: 96.9,
+          weightUtilization: 94.8,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1500,
+        duration: 20,
+        cost: 8400,
+        fuelConsumption: 300,
+        tolls: 1500,
+        stops: 1
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_20FT',
+      quantity: 1
+    }],
+    dropPoints: 1,
+    routeStrategy: 'separate',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: false,
+    totalCost: 8400,
+    totalDistance: 1500,
+    totalDuration: 20,
+    costBreakdown: {
+      fuel: 6000,
+      tolls: 1500,
+      maintenance: 900
+    },
+    totalWeight: 1890,
+    totalVolume: 31.7,
+    createdAt: '2024-11-27T11:45:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 97.7,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
+  },
+  {
+    id: 'PLAN-020',
+    orders: [
+      { id: 'SO192', doId: 'DO192', route: 'DEL-HYD', quantity: 22, seller: 'Elevator Components', customer: 'Hyderabad Construction', materialType: 'cuboidal', dimensions: { length: 900, width: 700, height: 600 }, weight: 75, status: 'planned' },
+      { id: 'SO196', doId: 'DO196', route: 'DEL-CHE', quantity: 40, seller: 'Security Systems', customer: 'Chennai Corporate', materialType: 'cuboidal', dimensions: { length: 500, width: 400, height: 200 }, weight: 14, status: 'planned' }
+    ],
+    materialTypes: ['cuboidal'],
+    constraints: {
+      optimizationPriority: 'weight',
+      routeStrategy: 'combined',
+      loadingSequence: 'lifo',
+      maxWeight: 25000,
+      maxVolume: 38.5,
+      dropPoints: 2,
+      priorities: ['high']
+    },
+    vehicles: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1,
+      orders: [
+        { id: 'SO192', quantity: 22 },
+        { id: 'SO196', quantity: 40 }
+      ],
+      loadPlan: {
+        items: [
+          { id: 'SO192', quantity: 22, position: { x: 0, y: 0, z: 0 } },
+          { id: 'SO196', quantity: 40, position: { x: 0, y: 0, z: 600 } }
+        ],
+        metrics: {
+          volumeUtilization: 97.3,
+          weightUtilization: 98.1,
+          stability: 100,
+          fragilityCompliance: 100
+        },
+        warnings: []
+      },
+      optimizedPositions: [],
+      routeInfo: {
+        distance: 1850,
+        duration: 25,
+        cost: 13320,
+        fuelConsumption: 555,
+        tolls: 2925,
+        stops: 2
+      }
+    }],
+    vehicleConfig: [{
+      type: 'CONTAINER_32FT',
+      quantity: 1
+    }],
+    dropPoints: 2,
+    routeStrategy: 'combined',
+    loadingSequence: 'lifo',
+    allowMixedRoutes: true,
+    totalCost: 13320,
+    totalDistance: 1850,
+    totalDuration: 25,
+    costBreakdown: {
+      fuel: 9990,
+      tolls: 2925,
+      maintenance: 405
+    },
+    totalWeight: 2798,
+    totalVolume: 52.3,
+    createdAt: '2024-11-27T12:30:00.000Z',
+    status: 'Planned',
+    isAIGenerated: true,
+    aiConfidence: 96.5,
+    optimizationScore: 100,
+    dispatchStatus: 'Ready'
   }
 ];
 

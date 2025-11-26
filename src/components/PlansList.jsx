@@ -1,5 +1,5 @@
-import React from 'react';
-import { Eye, MoreVertical, ChevronRight, FileText, Calendar, Package, Truck, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, MoreVertical, ChevronRight, FileText, Calendar, Package, Truck, AlertCircle, CheckCircle, Edit, Trash2, Copy } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +19,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const PlansList = ({ plans, onViewPlan }) => {
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+
+  // Calculate counts based on plan status
+  // Pending: Plans that haven't been generated yet (no vehicles assigned)
+  const pendingCount = plans.filter(plan => {
+    return !plan.vehicles || plan.vehicles.length === 0;
+  }).length;
+
+  // Generated: Plans that have been optimized/generated (have vehicles assigned)
+  const generatedCount = plans.filter(plan => {
+    return plan.vehicles && plan.vehicles.length > 0;
+  }).length;
+
   const getStatusVariant = (status) => {
     switch (status?.toLowerCase()) {
       case 'planned': return 'default';
@@ -28,6 +47,28 @@ const PlansList = ({ plans, onViewPlan }) => {
       case 'completed': return 'secondary';
       case 'failed': return 'destructive';
       default: return 'secondary';
+    }
+  };
+
+  const handleMoreActions = (plan, action) => {
+    setSelectedPlanId(null);
+    switch (action) {
+      case 'edit':
+        // TODO: Implement edit functionality
+        console.log('Edit plan:', plan.id);
+        break;
+      case 'duplicate':
+        // TODO: Implement duplicate functionality
+        console.log('Duplicate plan:', plan.id);
+        break;
+      case 'delete':
+        // TODO: Implement delete functionality
+        if (window.confirm(`Are you sure you want to delete ${plan.id}?`)) {
+          console.log('Delete plan:', plan.id);
+        }
+        break;
+      default:
+        break;
     }
   };
 
@@ -40,13 +81,13 @@ const PlansList = ({ plans, onViewPlan }) => {
           <p className="text-muted-foreground">Manage and monitor your dispatch plans</p>
         </div>
         <div className="flex gap-2">
-          <Button variant={plans.length > 0 ? "default" : "outline"}>
+          <Button variant={pendingCount > 0 ? "default" : "outline"}>
             Pending
-            <Badge variant="secondary" className="ml-2">{plans.length}</Badge>
+            <Badge variant="secondary" className="ml-2">{pendingCount}</Badge>
           </Button>
-          <Button variant="outline">
+          <Button variant={generatedCount > 0 ? "default" : "outline"}>
             Generated
-            <Badge variant="outline" className="ml-2">0</Badge>
+            <Badge variant={generatedCount > 0 ? "secondary" : "outline"} className="ml-2">{generatedCount}</Badge>
           </Button>
         </div>
       </div>
@@ -92,7 +133,14 @@ const PlansList = ({ plans, onViewPlan }) => {
           <TableBody>
               {plans.length > 0 ? (
                 plans.map((plan) => (
-                <TableRow key={plan.id}>
+                <TableRow key={plan.id} onClick={(e) => {
+                  // Prevent row click from interfering with button clicks
+                  const target = e.target;
+                  const isButton = target.closest('button') || target.closest('[role="button"]');
+                  if (isButton) {
+                    return; // Let button handle its own click
+                  }
+                }}>
                   <TableCell>
                     <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
                   </TableCell>
@@ -141,26 +189,78 @@ const PlansList = ({ plans, onViewPlan }) => {
                         {plan.status || 'Planned'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                          onClick={() => onViewPlan(plan)}
-                        >
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('View button clicked, plan:', plan.id);
+                          if (onViewPlan && typeof onViewPlan === 'function') {
+                            console.log('Calling onViewPlan with plan:', plan);
+                            onViewPlan(plan);
+                          } else {
+                            console.error('onViewPlan is not a function:', typeof onViewPlan, onViewPlan);
+                          }
+                        }}
+                        title="View plan details"
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 cursor-pointer relative z-10"
+                      >
                         <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                           onClick={() => onViewPlan(plan)}
-                        >
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            title="More options"
+                            className="cursor-pointer hover:bg-accent"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleMoreActions(plan, 'edit')}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMoreActions(plan, 'duplicate')}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleMoreActions(plan, 'delete')}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Plan
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Chevron button clicked, plan:', plan.id);
+                          if (onViewPlan && typeof onViewPlan === 'function') {
+                            console.log('Calling onViewPlan with plan:', plan);
+                            onViewPlan(plan);
+                          } else {
+                            console.error('onViewPlan is not a function:', typeof onViewPlan, onViewPlan);
+                          }
+                        }}
+                        title="View plan details"
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 cursor-pointer relative z-10"
+                      >
                         <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      </div>
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
                 ))

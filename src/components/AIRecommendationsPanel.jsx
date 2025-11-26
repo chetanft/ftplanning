@@ -79,7 +79,7 @@ const AIRecommendationsPanel = ({
   // Render score bar
   const ScoreBar = ({ score, label, color = 'blue' }) => (
     <div className="flex items-center space-x-2">
-      <span className="text-xs text-gray-500 w-20">{label}</span>
+      <span className="text-xs text-gray-500 w-28 truncate" title={label}>{label}</span>
       <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           className={`h-full bg-${color}-500 rounded-full transition-all`}
@@ -554,12 +554,23 @@ const AIRecommendationsPanel = ({
               (() => {
                 // Score and rank orders
                 const vehicleSpec = vehicleTypes.find(v => v.id === selectedVehicles[0]?.type);
-                const scoredOrders = scoreUnplannedOrders(
+                const allScoredOrders = scoreUnplannedOrders(
                   utilizationRecommendations,
                   selectedOrders,
                   currentUtilization,
                   vehicleSpec
-                ).filter(order => order.recommendation?.canFit); // Only show orders that can fit
+                );
+
+
+                const scoredOrders = allScoredOrders; // Show all orders, not just ones that fit
+
+                if (scoredOrders.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No recommendations available</p>
+                    </div>
+                  );
+                }
 
                 return (
                   <div className="space-y-3">

@@ -63,19 +63,27 @@ export const scoreUnplannedOrders = (
             selectedOrders
         );
 
-        // 5. Size Consistency Score (0-100)
+        // 5. Route Compatibility Score (0-100) - PRIORITY: Same route maximizes utilization
+        const existingRoutes = [...new Set(selectedOrders.map(o => o.route).filter(r => r))];
+        const routeCompatibilityScore = existingRoutes.length > 0
+            ? (existingRoutes.includes(order.route) ? 100 : 30) // High score for same route, low for different
+            : 50; // Neutral if no routes selected yet
+
+        // 6. Size Consistency Score (0-100)
         const sizeConsistencyScore = calculateSizeConsistencyScore(order, selectedOrders);
 
-        // Calculate weighted total score
+        // Calculate weighted total score - Route compatibility is now highest priority for 100% utilization
         const weights = {
-            capacityFit: 0.35,      // 35% - Most important
-            fragility: 0.25,        // 25% - Safety critical
-            costEfficiency: 0.15,   // 15% - Economic factor
-            packaging: 0.15,        // 15% - Operational efficiency
-            sizeConsistency: 0.10   // 10% - Loading optimization
+            routeCompatibility: 0.40, // 40% - HIGHEST: Same route maximizes utilization to 100%
+            capacityFit: 0.30,       // 30% - Capacity fitting
+            fragility: 0.15,         // 15% - Safety critical (reduced but still important)
+            costEfficiency: 0.08,    // 8% - Economic factor
+            packaging: 0.05,         // 5% - Operational efficiency
+            sizeConsistency: 0.02    // 2% - Loading optimization
         };
 
         const totalScore =
+            routeCompatibilityScore * weights.routeCompatibility +
             capacityFitScore * weights.capacityFit +
             fragilityScore * weights.fragility +
             costEfficiencyScore * weights.costEfficiency +
@@ -90,12 +98,13 @@ export const scoreUnplannedOrders = (
             recommendation: {
                 totalScore: Math.round(totalScore),
                 quality,
-                breakdown: {
-                    capacityFit: Math.round(capacityFitScore),
-                    fragility: Math.round(fragilityScore),
-                    costEfficiency: Math.round(costEfficiencyScore),
-                    packaging: Math.round(packagingScore),
-                    sizeConsistency: Math.round(sizeConsistencyScore)
+                scoreBreakdown: {
+                    'Route Compatibility': Math.round(routeCompatibilityScore),
+                    'Capacity Fit': Math.round(capacityFitScore),
+                    'Fragility': Math.round(fragilityScore),
+                    'Cost Efficiency': Math.round(costEfficiencyScore),
+                    'Packaging': Math.round(packagingScore),
+                    'Size Consistency': Math.round(sizeConsistencyScore)
                 },
                 metrics: {
                     weightFit: Math.round(weightFitRatio * 100),
@@ -105,6 +114,7 @@ export const scoreUnplannedOrders = (
                 },
                 canFit: weightFitRatio <= 1 && volumeFitRatio <= 1,
                 reasons: generateRecommendationReasons(
+                    routeCompatibilityScore,
                     capacityFitScore,
                     fragilityScore,
                     costEfficiencyScore,
@@ -242,6 +252,7 @@ const getRecommendationQuality = (score) => {
 };
 
 const generateRecommendationReasons = (
+    routeScore,
     capacityScore,
     fragilityScore,
     costScore,
@@ -250,6 +261,12 @@ const generateRecommendationReasons = (
     fragility
 ) => {
     const reasons = [];
+
+    if (routeScore >= 90) {
+        reasons.push('Same route - maximizes utilization to 100%');
+    } else if (routeScore >= 60) {
+        reasons.push('Compatible route');
+    }
 
     if (capacityScore >= 80) {
         reasons.push('Optimal capacity utilization');
@@ -265,6 +282,8 @@ const generateRecommendationReasons = (
     }
     if (fragility.score <= 2) {
         reasons.push('Durable item - easy to handle');
+    } else if (fragility.score >= 4) {
+        reasons.push('Fragile item - requires careful stacking');
     }
 
     if (reasons.length === 0) {

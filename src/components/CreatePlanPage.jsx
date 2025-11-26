@@ -1,16 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Truck, AlertTriangle, CheckCircle, Clock, ChevronRight, RefreshCw, FileText, AlertCircle, Info, Settings } from 'lucide-react';
+import { Truck, AlertTriangle, CheckCircle, Clock, ChevronRight, RefreshCw, FileText, AlertCircle, Info, Settings, Edit, X } from 'lucide-react';
 import PlanCreation from './PlanCreation';
 import TruckVisualization from './TruckVisualization';
 import RouteVisualization from './RouteVisualization';
 import PlanOptionsPanel from './PlanOptionsPanel';
 import ErrorBoundary from './ErrorBoundary';
+import FragilityPanel from './FragilityPanel';
 import { validateOrders, getValidationStages } from '../utils/planValidation';
 import { vehicleTypes } from '../data/mockData';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 const CreatePlanPage = ({
   selectedOrders,
@@ -20,7 +30,9 @@ const CreatePlanPage = ({
   planData,
   googleMapsApiKey,
   availableOrders,
-  onAddOrder
+  onAddOrder,
+  onRemoveOrder,
+  onUpdateOrder
 }) => {
   const [currentStep, setCurrentStep] = useState('validate');
 
@@ -56,6 +68,11 @@ const CreatePlanPage = ({
   });
 
   const [activeTab, setActiveTab] = useState('plan-summary');
+
+  // Drawer state for editing orders
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editingWarning, setEditingWarning] = useState(null);
 
   useEffect(() => {
     if (currentStep === 'validate' && validationStatus === 'idle') {
@@ -109,6 +126,108 @@ const CreatePlanPage = ({
 
   const handleRetryValidation = () => {
     startValidation();
+  };
+
+  // Parse warning to extract order ID and warning type
+  const parseWarning = (warning) => {
+    // Pattern: "Order SO005: Marked as non-stackable but packaging (Wooden Crate) allows stacking"
+    const orderMatch = warning.match(/Order\s+([A-Z0-9]+):/);
+    if (orderMatch) {
+      return {
+        orderId: orderMatch[1],
+        type: 'order',
+        warning: warning,
+        section: 'packaging' // Default to packaging section for stackable warnings
+      };
+    }
+    
+    // Pattern: "Orders missing fragility scores: SO010. Default scores will be applied."
+    // Also handles: "Orders missing fragility scores: SO010, SO011. Default scores will be applied."
+    // And: "5 orders missing fragility scores: SO010, SO011 and 3 more. Default scores will be applied."
+    const missingFragilityMatch = warning.match(/Orders missing fragility scores:\s*([A-Z0-9]+(?:,\s*[A-Z0-9]+)*(?:\s+and\s+\d+\s+more)?)/);
+    if (missingFragilityMatch) {
+      const orderIdsStr = missingFragilityMatch[1];
+      // Extract order IDs before "and X more" if present
+      const orderIds = orderIdsStr.split(',').map(id => id.trim()).filter(id => !id.match(/and\s+\d+\s+more/));
+      return {
+        orderIds: orderIds,
+        type: 'missing_fragility',
+        warning: warning,
+        section: 'fragility'
+      };
+    }
+    
+    // Pattern: "Orders missing packaging type: SO010. Default packaging will be assumed."
+    // Also handles multiple orders
+    const missingPackagingMatch = warning.match(/Orders missing packaging type:\s*([A-Z0-9]+(?:,\s*[A-Z0-9]+)*(?:\s+and\s+\d+\s+more)?)/);
+    if (missingPackagingMatch) {
+      const orderIdsStr = missingPackagingMatch[1];
+      const orderIds = orderIdsStr.split(',').map(id => id.trim()).filter(id => !id.match(/and\s+\d+\s+more/));
+      return {
+        orderIds: orderIds,
+        type: 'missing_packaging',
+        warning: warning,
+        section: 'packaging'
+      };
+    }
+    
+    // Pattern: "Route DEL-CHE: Multiple pickup locations..."
+    const routeMatch = warning.match(/Route\s+([A-Z-]+):/);
+    if (routeMatch) {
+      return {
+        routeId: routeMatch[1],
+        type: 'route',
+        warning: warning
+      };
+    }
+    
+    return {
+      type: 'unknown',
+      warning: warning
+    };
+  };
+
+  // Handle edit button click
+  const handleEditWarning = (warning) => {
+    const parsed = parseWarning(warning);
+    
+    if (parsed.type === 'order' && parsed.orderId) {
+      const order = selectedOrders.find(o => o.id === parsed.orderId);
+      if (order) {
+        setEditingOrder(order);
+        setEditingWarning(parsed);
+        setDrawerOpen(true);
+      }
+    } else if (parsed.type === 'missing_fragility' && parsed.orderIds) {
+      // Edit first order with missing fragility
+      const orderId = parsed.orderIds[0];
+      const order = selectedOrders.find(o => o.id === orderId);
+      if (order) {
+        setEditingOrder(order);
+        setEditingWarning(parsed);
+        setDrawerOpen(true);
+      }
+    } else if (parsed.type === 'missing_packaging' && parsed.orderIds) {
+      // Edit first order with missing packaging
+      const orderId = parsed.orderIds[0];
+      const order = selectedOrders.find(o => o.id === orderId);
+      if (order) {
+        setEditingOrder(order);
+        setEditingWarning(parsed);
+        setDrawerOpen(true);
+      }
+    }
+  };
+
+  // Handle order update from drawer
+  const handleOrderUpdate = (orderId, updates) => {
+    if (onUpdateOrder) {
+      onUpdateOrder(orderId, updates);
+      // Re-run validation after update
+      setTimeout(() => {
+        startValidation();
+      }, 300);
+    }
   };
 
   const handleProceedToGeneration = () => {
@@ -317,8 +436,28 @@ const CreatePlanPage = ({
                 <AlertCircle className="h-5 w-5 text-warning mt-0.5 mr-3 flex-shrink-0" />
                 <div className="flex-1">
                   <h3 className="font-medium">Warnings ({validationWarnings.length})</h3>
-                  <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1 max-h-40 overflow-y-auto">
-                    {validationWarnings.map((warning, i) => <li key={i}>{warning}</li>)}
+                  <ul className="list-none text-sm text-muted-foreground mt-2 space-y-2 max-h-40 overflow-y-auto">
+                    {validationWarnings.map((warning, i) => {
+                      const parsed = parseWarning(warning);
+                      const canEdit = parsed.type === 'order' || parsed.type === 'missing_fragility' || parsed.type === 'missing_packaging';
+                      
+                      return (
+                        <li key={i} className="flex items-start justify-between gap-2">
+                          <span className="flex-1">{warning}</span>
+                          {canEdit && onUpdateOrder && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditWarning(warning)}
+                              className="h-7 px-2 flex-shrink-0"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
@@ -558,6 +697,7 @@ const CreatePlanPage = ({
                     onGeneratePlan={onGeneratePlan}
                     availableOrders={availableOrders}
                     onAddOrder={onAddOrder}
+                    onRemoveOrder={onRemoveOrder}
                   />
                 </CardContent>
               </Card>
@@ -617,6 +757,56 @@ const CreatePlanPage = ({
         {currentStep === 'generate' && renderGenerationStep()}
         {currentStep === 'review' && renderReviewStep()}
       </div>
+
+      {/* Edit Order Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <DrawerTitle>Edit Order Details</DrawerTitle>
+                {editingOrder && (
+                  <>
+                    <DrawerDescription className="mt-2 font-medium">
+                      Order: {editingOrder.id}
+                    </DrawerDescription>
+                    {editingWarning && (
+                      <DrawerDescription className="text-sm text-muted-foreground">
+                        {editingWarning.type === 'missing_fragility' && 'Please set a fragility score for this order.'}
+                        {editingWarning.type === 'missing_packaging' && 'Please select a packaging type for this order.'}
+                        {editingWarning.type === 'order' && editingWarning.warning?.includes('stackable') && 'Fix the stackable setting or packaging type to resolve this warning.'}
+                        {editingWarning.type === 'order' && !editingWarning.warning?.includes('stackable') && 'Fix the issue mentioned in the warning.'}
+                      </DrawerDescription>
+                    )}
+                  </>
+                )}
+              </div>
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DrawerClose>
+            </div>
+          </DrawerHeader>
+          
+          <div className="p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {editingOrder && (
+              <FragilityPanel
+                orders={[editingOrder]}
+                selectedOrder={editingOrder}
+                onUpdateOrder={handleOrderUpdate}
+                initialExpandedSection={editingWarning?.section || 'fragility'}
+              />
+            )}
+          </div>
+
+          <DrawerFooter>
+            <Button onClick={() => setDrawerOpen(false)}>
+              Done
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

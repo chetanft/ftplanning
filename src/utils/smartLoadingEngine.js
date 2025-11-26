@@ -96,10 +96,13 @@ export class SmartLoadingEngine {
     // Step 4: Generate placement positions
     const placedItems = this.generatePlacements(zonedItems);
 
-    // Step 5: Optimize stacking sequence
-    const optimizedItems = this.optimizeStackingSequence(placedItems);
+    // Step 5: Center cargo in vehicle for balanced weight distribution
+    const centeredItems = this.centerCargoInVehicle(placedItems);
 
-    // Step 6: Calculate metrics and validate
+    // Step 6: Optimize stacking sequence
+    const optimizedItems = this.optimizeStackingSequence(centeredItems);
+
+    // Step 7: Calculate metrics and validate
     const loadPlan = this.finalizeLoadPlan(optimizedItems);
 
     return loadPlan;
@@ -467,6 +470,40 @@ export class SmartLoadingEngine {
     score += supportingItems.length * 5;
 
     return score;
+  }
+
+  /**
+   * Center cargo horizontally in the vehicle to ensure balanced weight distribution
+   */
+  centerCargoInVehicle(cargoBlocks) {
+    if (cargoBlocks.length === 0) return cargoBlocks;
+
+    // Find the leftmost and rightmost positions
+    const minX = Math.min(...cargoBlocks.map(b => b.position ? b.position.x : 0));
+    const maxX = Math.max(...cargoBlocks.map(b => {
+      if (!b.position) return 0;
+      const dims = this.getItemDimensions(b);
+      return b.position.x + dims.length;
+    }));
+
+    const cargoWidth = maxX - minX;
+    const vehicleWidth = this.vehicle.dimensions.length;
+    const unusedSide = (vehicleWidth - cargoWidth) / 2;
+
+    // Adjust all positions to center the cargo block
+    const offset = unusedSide - minX;
+
+    return cargoBlocks.map(block => {
+      if (!block.position) return block;
+
+      return {
+        ...block,
+        position: {
+          ...block.position,
+          x: block.position.x + offset
+        }
+      };
+    });
   }
 
   /**
