@@ -81,7 +81,7 @@ const LoadingSequencePanel = ({ planData, selectedItem, onItemSelect }) => {
 
           return (
             <div
-              key={item.id}
+              key={`${item.id}-${index}-${loadingOrder}`}
               className={`p-3 border rounded-lg cursor-pointer transition-all ${
                 isSelected
                   ? 'border-primary-500 bg-primary-50 shadow-md'

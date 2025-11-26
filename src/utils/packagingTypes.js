@@ -3,6 +3,29 @@
  * Defines packaging categories, protection levels, and stacking compatibility
  */
 
+import { Package, Box, Container, Drum, Shield, Wind, Gift, Snowflake, ShoppingBag, FileText, Wine, Lock, Clipboard } from 'lucide-react';
+
+// Icon mapping for packaging types
+export const PACKAGING_ICONS = {
+  corrugated_box: Package,
+  corrugated_box_heavy: Box,
+  wooden_crate: Container,
+  wooden_pallet: Container,
+  plastic_container: Container,
+  plastic_crate: Container,
+  metal_drum: Drum,
+  metal_container: Container,
+  foam_padded: Shield,
+  bubble_wrapped: Wind,
+  shrink_wrap: Gift,
+  thermal_insulated: Snowflake,
+  woven_sack: ShoppingBag,
+  paper_sack: FileText,
+  glass_carton: Wine,
+  cylinder_cage: Lock,
+  unpackaged: Clipboard
+};
+
 // Packaging categories with protection characteristics
 export const PACKAGING_TYPES = {
   // Standard Boxes
@@ -24,7 +47,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0.5,  // kg (empty packaging weight)
     costFactor: 1.0,
-    icon: '📦'
+    iconComponent: PACKAGING_ICONS.corrugated_box
   },
 
   CORRUGATED_BOX_HEAVY: {
@@ -45,7 +68,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 1.0,
     costFactor: 1.5,
-    icon: '📦'
+    iconComponent: PACKAGING_ICONS.corrugated_box_heavy
   },
 
   // Wooden Packaging
@@ -67,7 +90,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 5.0,
     costFactor: 3.0,
-    icon: '🪵'
+    iconComponent: PACKAGING_ICONS.wooden_crate
   },
 
   WOODEN_PALLET: {
@@ -88,7 +111,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 15.0,
     costFactor: 2.0,
-    icon: '🪵'
+    iconComponent: PACKAGING_ICONS.wooden_pallet
   },
 
   // Plastic Containers
@@ -110,7 +133,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 1.5,
     costFactor: 2.0,
-    icon: '🧊'
+    iconComponent: PACKAGING_ICONS.plastic_container
   },
 
   PLASTIC_CRATE: {
@@ -131,7 +154,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 3.0,
     costFactor: 2.5,
-    icon: '🧊'
+    iconComponent: PACKAGING_ICONS.plastic_crate
   },
 
   // Metal Containers
@@ -153,7 +176,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 8.0,
     costFactor: 4.0,
-    icon: '🛢️'
+    iconComponent: PACKAGING_ICONS.metal_drum
   },
 
   METAL_CONTAINER: {
@@ -174,7 +197,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 10.0,
     costFactor: 5.0,
-    icon: '🗃️'
+    iconComponent: PACKAGING_ICONS.metal_container
   },
 
   // Protective Packaging
@@ -196,7 +219,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 1.0,
     costFactor: 2.5,
-    icon: '🧽'
+    iconComponent: PACKAGING_ICONS.foam_padded
   },
 
   BUBBLE_WRAPPED: {
@@ -217,7 +240,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0.2,
     costFactor: 1.5,
-    icon: '🫧'
+    iconComponent: PACKAGING_ICONS.bubble_wrapped
   },
 
   // Specialty Packaging
@@ -239,7 +262,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0.3,
     costFactor: 0.5,
-    icon: '🎁'
+    iconComponent: PACKAGING_ICONS.shrink_wrap
   },
 
   THERMAL_INSULATED: {
@@ -260,7 +283,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 2.0,
     costFactor: 4.0,
-    icon: '❄️'
+    iconComponent: PACKAGING_ICONS.thermal_insulated
   },
 
   // Bags & Sacks
@@ -282,7 +305,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0.2,
     costFactor: 0.3,
-    icon: '👜'
+    iconComponent: PACKAGING_ICONS.woven_sack
   },
 
   PAPER_SACK: {
@@ -303,7 +326,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0.1,
     costFactor: 0.2,
-    icon: '📄'
+    iconComponent: PACKAGING_ICONS.paper_sack
   },
 
   // Specialized
@@ -325,7 +348,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 1.0,
     costFactor: 2.0,
-    icon: '🍾'
+    iconComponent: PACKAGING_ICONS.glass_carton
   },
 
   CYLINDER_CAGE: {
@@ -346,7 +369,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 15.0,
     costFactor: 5.0,
-    icon: '🔒'
+    iconComponent: PACKAGING_ICONS.cylinder_cage
   },
 
   // No Packaging
@@ -368,7 +391,7 @@ export const PACKAGING_TYPES = {
     },
     weight: 0,
     costFactor: 0,
-    icon: '📋'
+    iconComponent: PACKAGING_ICONS.unpackaged
   }
 };
 
@@ -900,18 +923,19 @@ export const calculateStackingLimits = (items) => {
 };
 
 /**
- * Get packaging icon
+ * Get packaging icon component
  * @param {string} packagingId - Packaging type ID
- * @returns {string} - Icon emoji
+ * @returns {React.Component} - Lucide icon component
  */
 export const getPackagingIcon = (packagingId) => {
   const packaging = getPackagingType(packagingId);
-  return packaging.icon || '📦';
+  return packaging.iconComponent || Package;
 };
 
 export default {
   PACKAGING_TYPES,
   PACKAGING_COMPATIBILITY,
+  PACKAGING_ICONS,
   getPackagingType,
   getAllPackagingTypes,
   checkPackagingCompatibility,
@@ -920,5 +944,3 @@ export default {
   calculateStackingLimits,
   getPackagingIcon
 };
-
-

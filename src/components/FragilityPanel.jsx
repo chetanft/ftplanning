@@ -1,8 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { AlertTriangle, Package, Shield, Thermometer, Droplets, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { FRAGILITY_DESCRIPTIONS, MATERIAL_PROFILES, assessOrderFragility } from '../utils/fragilityScoring';
-import { PACKAGING_TYPES, getPackagingType, recommendPackaging } from '../utils/packagingTypes';
+import { getPackagingType, recommendPackaging, getPackagingIcon } from '../utils/packagingTypes';
 import { fragilityLevels, materialProfileOptions, packagingTypeOptions } from '../data/mockData';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 /**
  * FragilityPanel - Component for viewing and editing fragility/packaging settings
@@ -81,47 +92,39 @@ const FragilityPanel = ({
   // Render fragility level selector
   const renderFragilitySelector = () => (
     <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-700">
-        Fragility Level
-      </label>
+      <Label>Fragility Level</Label>
       <div className="grid grid-cols-5 gap-2">
         {fragilityLevels.map(level => {
           const isSelected = currentAssessment?.score === level.score;
           return (
-            <button
+            <Button
               key={level.score}
+              variant={isSelected ? "default" : "outline"}
               onClick={() => handleFragilityChange(level.score)}
               disabled={readOnly}
-              className={`p-2 rounded-lg border-2 transition-all ${
-                isSelected
-                  ? 'border-current shadow-md scale-105'
-                  : 'border-gray-200 hover:border-gray-300'
-              } ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+              className="flex flex-col h-auto py-2"
               style={{ 
                 borderColor: isSelected ? level.color : undefined,
                 backgroundColor: isSelected ? `${level.color}15` : undefined
               }}
-              title={level.description}
             >
-              <div 
-                className="text-2xl font-bold mb-1"
+              <span 
+                className="text-xl font-bold"
                 style={{ color: level.color }}
               >
                 {level.score}
-              </div>
-              <div className="text-xs text-gray-600 truncate">
+              </span>
+              <span className="text-xs truncate">
                 {level.label}
-              </div>
-            </button>
+              </span>
+            </Button>
           );
         })}
       </div>
       
       {currentAssessment && (
-        <div 
-          className="p-3 rounded-lg mt-2"
-          style={{ backgroundColor: `${currentAssessment.color}15` }}
-        >
+        <Card className="mt-2" style={{ backgroundColor: `${currentAssessment.color}15` }}>
+          <CardContent className="p-3">
           <div className="flex items-center">
             <Shield 
               className="h-5 w-5 mr-2" 
@@ -131,10 +134,11 @@ const FragilityPanel = ({
               {currentAssessment.label}
             </span>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
             {currentAssessment.description}
           </p>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -143,112 +147,103 @@ const FragilityPanel = ({
   const renderPackagingSelector = () => {
     const currentPackaging = selectedOrder?.packagingType || 'corrugated_box';
     const packagingInfo = getPackagingType(currentPackaging);
-    const selectedOption = packagingTypeOptions.find(opt => opt.id === currentPackaging);
 
     return (
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
-          Packaging Type
-        </label>
+        <Label>Packaging Type</Label>
         
-        {/* Display selected value */}
-        <div className="relative">
-          <select
+        <Select
             value={currentPackaging}
-            onChange={(e) => handlePackagingChange(e.target.value)}
+          onValueChange={handlePackagingChange}
             disabled={readOnly}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none pr-8"
           >
-            {packagingTypeOptions.map(opt => (
-              <option key={opt.id} value={opt.id}>
-                {opt.icon} {opt.label}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          </div>
-        </div>
-        
-        {/* Show selected option display */}
-        {selectedOption && (
-          <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {packagingTypeOptions.map(opt => {
+              const IconComponent = getPackagingIcon(opt.id);
+              return (
+                <SelectItem key={opt.id} value={opt.id}>
             <div className="flex items-center">
-              <span className="text-2xl mr-2">{selectedOption.icon}</span>
-              <span className="text-sm font-medium text-gray-700">{selectedOption.label}</span>
+                    <IconComponent className="h-4 w-4 mr-2" />
+                    {opt.label}
             </div>
-          </div>
-        )}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
 
         {packagingInfo && (
-          <div className="p-3 bg-gray-50 rounded-lg">
+          <Card>
+            <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{packagingInfo.icon}</span>
-              <span className="text-sm text-gray-500">{packagingInfo.description}</span>
+                {(() => {
+                  const IconComponent = getPackagingIcon(currentPackaging);
+                  return <IconComponent className="h-6 w-6 text-muted-foreground" />;
+                })()}
+                <span className="text-sm text-muted-foreground">{packagingInfo.description}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center">
-                <Package className="h-3 w-3 mr-1 text-gray-400" />
+                  <Package className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span>Crush: {packagingInfo.protection.crush}/5</span>
               </div>
               <div className="flex items-center">
-                <AlertTriangle className="h-3 w-3 mr-1 text-gray-400" />
+                  <AlertTriangle className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span>Shock: {packagingInfo.protection.shock}/5</span>
               </div>
               <div className="flex items-center">
-                <Droplets className="h-3 w-3 mr-1 text-gray-400" />
+                  <Droplets className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span>Moisture: {packagingInfo.protection.moisture}/5</span>
               </div>
               <div className="flex items-center">
-                <Thermometer className="h-3 w-3 mr-1 text-gray-400" />
+                  <Thermometer className="h-3 w-3 mr-1 text-muted-foreground" />
                 <span>Temp: {packagingInfo.protection.temperature}/5</span>
               </div>
             </div>
-            <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-muted-foreground">
               Max stack: {packagingInfo.stackability.maxStackWeight}kg, {packagingInfo.stackability.maxStackLayers} layers
             </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Packaging recommendations */}
         {showRecommendations && packagingRecommendations.length > 0 && (
-          <div className="mt-3">
-            <div className="text-sm font-medium text-gray-700 mb-2">
-              Recommended Packaging:
-            </div>
-            <div className="space-y-2">
-              {packagingRecommendations.slice(0, 3).map((rec, idx) => (
-                <button
+          <div className="mt-3 space-y-2">
+            <Label className="text-sm">Recommended Packaging:</Label>
+            {packagingRecommendations.slice(0, 3).map((rec, idx) => {
+              const IconComponent = getPackagingIcon(rec.packaging.id);
+              return (
+                <Button
                   key={rec.packaging.id}
+                  variant="outline"
                   onClick={() => handlePackagingChange(rec.packaging.id)}
                   disabled={readOnly}
-                  className="w-full p-2 text-left border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                  className="w-full justify-between h-auto py-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {rec.packaging.icon} {rec.packaging.label}
+                  <span className="flex items-center gap-2">
+                    <IconComponent className="h-4 w-4" />
+                    {rec.packaging.label}
                     </span>
-                    <span className="text-xs text-green-600 font-medium">
+                  <Badge variant="success" className="text-xs">
                       {rec.suitabilityScore}% match
-                    </span>
-                  </div>
-                  {rec.reasons.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {rec.reasons.slice(0, 2).join(', ')}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+                  </Badge>
+                </Button>
+              );
+            })}
           </div>
         )}
 
-        <button
+        <Button
+          variant="link"
           onClick={() => setShowRecommendations(!showRecommendations)}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="p-0 h-auto"
         >
           {showRecommendations ? 'Hide recommendations' : 'Show recommendations'}
-        </button>
+        </Button>
       </div>
     );
   };
@@ -259,21 +254,23 @@ const FragilityPanel = ({
 
     return (
       <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
-          Material Profile
-        </label>
-        <select
+        <Label>Material Profile</Label>
+        <Select
           value={currentProfile}
-          onChange={(e) => handleProfileChange(e.target.value)}
+          onValueChange={handleProfileChange}
           disabled={readOnly}
-          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
           {materialProfileOptions.map(opt => (
-            <option key={opt.id} value={opt.id}>
+              <SelectItem key={opt.id} value={opt.id}>
               {opt.label} (Fragility: {opt.fragilityScore})
-            </option>
+              </SelectItem>
           ))}
-        </select>
+          </SelectContent>
+        </Select>
       </div>
     );
   };
@@ -283,29 +280,31 @@ const FragilityPanel = ({
     if (!fragilitySummary) return null;
 
     return (
-      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Load Fragility Summary</h4>
-        
+      <Card className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Load Fragility Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{fragilitySummary.average}</div>
-            <div className="text-xs text-gray-500">Avg Fragility</div>
+              <div className="text-2xl font-bold">{fragilitySummary.average}</div>
+              <div className="text-xs text-muted-foreground">Avg Fragility</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{fragilitySummary.totalOrders}</div>
-            <div className="text-xs text-gray-500">Total Orders</div>
+              <div className="text-2xl font-bold">{fragilitySummary.totalOrders}</div>
+              <div className="text-xs text-muted-foreground">Total Orders</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold" style={{ color: FRAGILITY_DESCRIPTIONS[fragilitySummary.max]?.color }}>
               {fragilitySummary.max}
             </div>
-            <div className="text-xs text-gray-500">Max Fragility</div>
+              <div className="text-xs text-muted-foreground">Max Fragility</div>
           </div>
         </div>
 
         {/* Distribution bar */}
         <div className="space-y-1">
-          <div className="text-xs text-gray-500 mb-1">Distribution:</div>
+            <div className="text-xs text-muted-foreground mb-1">Distribution:</div>
           <div className="flex h-6 rounded-lg overflow-hidden">
             {[1, 2, 3, 4, 5].map(level => {
               const count = fragilitySummary.distribution[level] || 0;
@@ -332,23 +331,24 @@ const FragilityPanel = ({
 
         {/* Warnings */}
         {fragilitySummary.hasExtremelyFragile && (
-          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center">
-            <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
-            <span className="text-sm text-red-700">
+            <div className="mt-3 p-2 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center">
+              <AlertTriangle className="h-4 w-4 text-destructive mr-2" />
+              <span className="text-sm text-destructive">
               Contains extremely fragile items - special handling required
             </span>
           </div>
         )}
 
         {fragilitySummary.hasFragile && !fragilitySummary.hasExtremelyFragile && (
-          <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-lg flex items-center">
-            <AlertTriangle className="h-4 w-4 text-orange-500 mr-2" />
-            <span className="text-sm text-orange-700">
+            <div className="mt-3 p-2 bg-warning/10 border border-warning/20 rounded-lg flex items-center">
+              <AlertTriangle className="h-4 w-4 text-warning mr-2" />
+              <span className="text-sm text-warning">
               Contains fragile items - careful handling required
             </span>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -357,36 +357,36 @@ const FragilityPanel = ({
     const isExpanded = expandedSection === id;
     
     return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <Card>
         <button
           onClick={() => setExpandedSection(isExpanded ? null : id)}
-          className="w-full p-3 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+          className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors rounded-t-lg"
         >
           <div className="flex items-center">
-            <Icon className="h-4 w-4 text-gray-500 mr-2" />
-            <span className="font-medium text-gray-700">{title}</span>
+            <Icon className="h-4 w-4 text-muted-foreground mr-2" />
+            <span className="font-medium">{title}</span>
           </div>
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
         {isExpanded && (
-          <div className="p-4 border-t border-gray-200">
+          <CardContent className="pt-0">
             {children}
-          </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
     );
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Fragility & Packaging</h3>
+        <h3 className="text-lg font-semibold">Fragility & Packaging</h3>
         {!readOnly && selectedOrder && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             Editing: {selectedOrder.id}
           </span>
         )}
@@ -397,7 +397,7 @@ const FragilityPanel = ({
 
       {/* No order selected message */}
       {!selectedOrder && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p>Select an order to view and edit fragility settings</p>
         </div>
@@ -424,5 +424,3 @@ const FragilityPanel = ({
 };
 
 export default FragilityPanel;
-
-

@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Truck, 
-  Star, 
-  AlertTriangle, 
-  CheckCircle, 
-  ChevronDown, 
+import {
+  Truck,
+  Star,
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
   ChevronUp,
   Shield,
   Snowflake,
@@ -12,21 +12,32 @@ import {
   DollarSign,
   TrendingUp,
   Layers,
-  Info
+  Info,
+  ThumbsUp,
+  XCircle,
+  Lightbulb,
+  Plus
 } from 'lucide-react';
 import { getVehicleRecommendations, analyzeVehicleSuitability } from '../services/vehicleRecommendation';
 import { generateStackingPlan } from '../utils/stackingOptimizer';
 import { assessOrderFragility } from '../utils/fragilityScoring';
+import { getPackagingIcon } from '../utils/packagingTypes';
+import { scoreUnplannedOrders } from '../utils/orderRecommendation';
 
 /**
  * AIRecommendationsPanel - Displays AI-powered vehicle and loading recommendations
  */
-const AIRecommendationsPanel = ({ 
-  orders = [], 
+const AIRecommendationsPanel = ({
+  orders = [],
   vehicleTypes = [],
   selectedVehicle = null,
   onSelectVehicle = null,
-  onApplyRecommendation = null
+  onApplyRecommendation = null,
+  utilizationRecommendations = [],
+  onAddOrder = null,
+  currentUtilization = null,
+  selectedOrders = [],
+  selectedVehicles = []
 }) => {
   const [expandedRecommendation, setExpandedRecommendation] = useState(0);
   const [showStackingPlan, setShowStackingPlan] = useState(false);
@@ -53,7 +64,7 @@ const AIRecommendationsPanel = ({
 
     const fragilityScores = orders.map(o => assessOrderFragility(o).score);
     const totalWeight = orders.reduce((sum, o) => sum + (o.weight * (o.quantity || 1)), 0);
-    
+
     return {
       totalOrders: orders.length,
       totalWeight: totalWeight,
@@ -70,7 +81,7 @@ const AIRecommendationsPanel = ({
     <div className="flex items-center space-x-2">
       <span className="text-xs text-gray-500 w-20">{label}</span>
       <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full bg-${color}-500 rounded-full transition-all`}
           style={{ width: `${score}%`, backgroundColor: getScoreColor(score) }}
         />
@@ -93,24 +104,22 @@ const AIRecommendationsPanel = ({
     const isSelected = selectedVehicle === rec.vehicle.id;
 
     return (
-      <div 
+      <div
         key={rec.vehicle.id}
-        className={`border rounded-lg overflow-hidden transition-all ${
-          isSelected 
-            ? 'border-blue-500 ring-2 ring-blue-200' 
-            : 'border-gray-200 hover:border-gray-300'
-        }`}
+        className={`border rounded-lg overflow-hidden transition-all ${isSelected
+          ? 'border-blue-500 ring-2 ring-blue-200'
+          : 'border-gray-200 hover:border-gray-300'
+          }`}
       >
         {/* Header */}
-        <div 
+        <div
           className={`p-4 cursor-pointer ${isSelected ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}`}
           onClick={() => setExpandedRecommendation(isExpanded ? -1 : index)}
         >
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
-                rec.isTopChoice ? 'bg-green-100' : 'bg-gray-100'
-              }`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${rec.isTopChoice ? 'bg-green-100' : 'bg-gray-100'
+                }`}>
                 {rec.vehicle.climateControl ? (
                   <Snowflake className={`h-5 w-5 ${rec.isTopChoice ? 'text-green-600' : 'text-gray-500'}`} />
                 ) : (
@@ -136,7 +145,7 @@ const AIRecommendationsPanel = ({
                   {Math.round(rec.totalScore)}
                 </span>
               </div>
-              <span 
+              <span
                 className="text-xs font-medium"
                 style={{ color: rec.matchQuality.color }}
               >
@@ -224,7 +233,7 @@ const AIRecommendationsPanel = ({
                 <h5 className="text-sm font-medium text-gray-700 mb-2">Key Features</h5>
                 <div className="flex flex-wrap gap-2">
                   {rec.recommendation.features.map((feature, i) => (
-                    <span 
+                    <span
                       key={i}
                       className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
                     >
@@ -243,11 +252,10 @@ const AIRecommendationsPanel = ({
                 if (onSelectVehicle) onSelectVehicle(rec.vehicle.id);
                 if (onApplyRecommendation) onApplyRecommendation(rec);
               }}
-              className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                isSelected
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`w-full py-2 rounded-lg font-medium transition-colors ${isSelected
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
             >
               {isSelected ? 'Selected' : 'Select This Vehicle'}
             </button>
@@ -291,7 +299,7 @@ const AIRecommendationsPanel = ({
               <div className="text-xs text-gray-500">Items</div>
             </div>
             <div>
-              <div 
+              <div
                 className="text-2xl font-bold"
                 style={{ color: stackingPlan.stability.rating.color }}
               >
@@ -305,22 +313,31 @@ const AIRecommendationsPanel = ({
         {/* Stability analysis */}
         <div className="border border-gray-200 rounded-lg p-4">
           <h5 className="font-medium text-gray-900 mb-3 flex items-center">
-            {stackingPlan.stability.rating.icon}
+            {(() => {
+              const iconMap = {
+                'CheckCircle': CheckCircle,
+                'ThumbsUp': ThumbsUp,
+                'AlertTriangle': AlertTriangle,
+                'XCircle': XCircle
+              };
+              const IconComponent = iconMap[stackingPlan.stability.rating.iconName] || CheckCircle;
+              return <IconComponent className="h-5 w-5" style={{ color: stackingPlan.stability.rating.color }} />;
+            })()}
             <span className="ml-2">Stability: {stackingPlan.stability.rating.label}</span>
           </h5>
 
           <div className="space-y-2">
-            <ScoreBar 
-              label="Weight" 
-              score={stackingPlan.stability.weightDistribution.score} 
+            <ScoreBar
+              label="Weight"
+              score={stackingPlan.stability.weightDistribution.score}
             />
-            <ScoreBar 
-              label="Fragility" 
-              score={stackingPlan.stability.fragilityProgression.score} 
+            <ScoreBar
+              label="Fragility"
+              score={stackingPlan.stability.fragilityProgression.score}
             />
-            <ScoreBar 
-              label="Compat." 
-              score={stackingPlan.stability.stackingCompatibility.score} 
+            <ScoreBar
+              label="Compat."
+              score={stackingPlan.stability.stackingCompatibility.score}
             />
           </div>
 
@@ -352,7 +369,7 @@ const AIRecommendationsPanel = ({
           <h5 className="font-medium text-gray-900 mb-3">Stacking Layers</h5>
           <div className="space-y-2">
             {stackingPlan.visualizationData.map((layer, index) => (
-              <div 
+              <div
                 key={index}
                 className="p-3 rounded-lg"
                 style={{ backgroundColor: layer.color }}
@@ -365,12 +382,15 @@ const AIRecommendationsPanel = ({
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {layer.items.map((item, i) => (
-                    <span 
+                    <span
                       key={i}
                       className="px-2 py-0.5 bg-white rounded text-xs flex items-center"
                       style={{ borderLeft: `3px solid ${item.fragility.color}` }}
                     >
-                      {item.packagingIcon} {item.name}
+                      {(() => {
+                        const IconComponent = getPackagingIcon(item.packagingType || 'corrugated_box');
+                        return <><IconComponent className="h-4 w-4 inline mr-1" /> {item.name}</>;
+                      })()}
                     </span>
                   ))}
                 </div>
@@ -414,7 +434,7 @@ const AIRecommendationsPanel = ({
             <span className="font-medium">{cargoProfile.maxFragility}/5</span>
           </div>
         </div>
-        
+
         {/* Special requirements badges */}
         <div className="flex flex-wrap gap-2 mt-3">
           {cargoProfile.hasFragile && (
@@ -457,25 +477,33 @@ const AIRecommendationsPanel = ({
       <div className="flex border-b border-gray-200">
         <button
           onClick={() => setActiveTab('vehicles')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'vehicles'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'vehicles'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
         >
           <Truck className="h-4 w-4 inline mr-1" />
           Vehicle Recommendations
         </button>
         <button
           onClick={() => setActiveTab('stacking')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'stacking'
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'stacking'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
         >
           <Layers className="h-4 w-4 inline mr-1" />
           Stacking Plan
+        </button>
+        <button
+          onClick={() => setActiveTab('utilization')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'utilization'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+        >
+          <Lightbulb className="h-4 w-4 inline mr-1" />
+          Utilization
         </button>
       </div>
 
@@ -514,6 +542,132 @@ const AIRecommendationsPanel = ({
               <div className="text-center py-8 text-gray-500">
                 <Layers className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Select a vehicle to see the stacking plan</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Utilization recommendations tab */}
+        {activeTab === 'utilization' && (
+          <div>
+            {utilizationRecommendations.length > 0 ? (
+              (() => {
+                // Score and rank orders
+                const vehicleSpec = vehicleTypes.find(v => v.id === selectedVehicles[0]?.type);
+                const scoredOrders = scoreUnplannedOrders(
+                  utilizationRecommendations,
+                  selectedOrders,
+                  currentUtilization,
+                  vehicleSpec
+                ).filter(order => order.recommendation?.canFit); // Only show orders that can fit
+
+                return (
+                  <div className="space-y-3">
+                    <p className="text-sm text-blue-700 mb-3">
+                      You have unused capacity. Consider adding these orders to improve utilization:
+                    </p>
+                    {scoredOrders.map(order => (
+                      <div
+                        key={order.id}
+                        className={`border rounded-lg p-3 ${order.recommendation?.canFit
+                          ? 'border-gray-200 hover:border-blue-300'
+                          : 'border-red-200 bg-red-50 opacity-60'
+                          }`}
+                      >
+                        {/* Header with Order ID and Score */}
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-semibold text-gray-900">
+                                {order.id}
+                              </div>
+                              {order.recommendation && (
+                                <span
+                                  className="text-xs font-bold px-2 py-0.5 rounded"
+                                  style={{
+                                    backgroundColor: `${order.recommendation.quality.color}20`,
+                                    color: order.recommendation.quality.color
+                                  }}
+                                >
+                                  {order.recommendation.totalScore}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-0.5">
+                              {order.seller || order.customer}
+                            </div>
+                          </div>
+                          {order.recommendation && (
+                            <div className="text-right">
+                              <div
+                                className="text-xs font-medium"
+                                style={{ color: order.recommendation.quality.color }}
+                              >
+                                {order.recommendation.quality.label}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Metrics */}
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Weight:</span>
+                            <span className="font-medium">{order.weight * (order.quantity || 1)}kg</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Qty:</span>
+                            <span className="font-medium">{order.quantity || 1}</span>
+                          </div>
+                          {order.recommendation && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">W Fit:</span>
+                                <span className="font-medium">{order.recommendation.metrics.weightFit}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">V Fit:</span>
+                                <span className="font-medium">{order.recommendation.metrics.volumeFit}%</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Reasons */}
+                        {order.recommendation?.reasons && order.recommendation.reasons.length > 0 && (
+                          <div className="mb-2">
+                            <div className="text-xs text-gray-500 space-y-0.5">
+                              {order.recommendation.reasons.slice(0, 2).map((reason, idx) => (
+                                <div key={idx} className="flex items-center">
+                                  <span className="w-1 h-1 bg-green-500 rounded-full mr-1.5"></span>
+                                  {reason}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Add Button */}
+                        <button
+                          onClick={() => onAddOrder && onAddOrder(order)}
+                          disabled={!order.recommendation?.canFit}
+                          className={`w-full px-3 py-1.5 rounded-lg transition-colors text-sm font-medium flex items-center justify-center ${order.recommendation?.canFit
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {order.recommendation?.canFit ? 'Add Order' : "Won't Fit"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Vehicle is optimally utilized or no suitable orders available</p>
               </div>
             )}
           </div>

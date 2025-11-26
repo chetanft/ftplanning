@@ -574,12 +574,13 @@ export class StackingOptimizer {
 
   /**
    * Get stability rating
+   * Note: icon field is kept for backward compatibility but should use Lucide icons in components
    */
   getStabilityRating(score) {
-    if (score >= 90) return { label: 'Excellent', color: '#22c55e', icon: '✅' };
-    if (score >= 75) return { label: 'Good', color: '#84cc16', icon: '👍' };
-    if (score >= 60) return { label: 'Fair', color: '#eab308', icon: '⚠️' };
-    return { label: 'Poor', color: '#ef4444', icon: '❌' };
+    if (score >= 90) return { label: 'Excellent', color: '#22c55e', iconName: 'CheckCircle' };
+    if (score >= 75) return { label: 'Good', color: '#84cc16', iconName: 'ThumbsUp' };
+    if (score >= 60) return { label: 'Fair', color: '#eab308', iconName: 'AlertTriangle' };
+    return { label: 'Poor', color: '#ef4444', iconName: 'XCircle' };
   }
 
   /**

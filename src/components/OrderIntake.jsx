@@ -1,11 +1,38 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, Package, MapPin, User, Hash, Shield, Box, Edit, ChevronDown, ChevronUp, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, Package, MapPin, Hash, Shield, Edit, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { getPackagingIcon } from '../utils/packagingTypes';
 import Pagination from './Pagination';
 import FragilityPanel from './FragilityPanel';
-import { assessOrderFragility, FRAGILITY_DESCRIPTIONS } from '../utils/fragilityScoring';
+import { assessOrderFragility } from '../utils/fragilityScoring';
 import { getPackagingType, getAllPackagingTypes } from '../utils/packagingTypes';
+import { vehicleTypes } from '../data/mockData';
+import { calculateOrderWeightAndVolume } from '../utils/vehicleOptimization';
 
-const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }) => {
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+
+const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, onCreatePlan }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [routeFilter, setRouteFilter] = useState('all');
   const [materialFilter, setMaterialFilter] = useState('all');
@@ -14,7 +41,6 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showFragilityModal, setShowFragilityModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Advanced Filters State
   const [filters, setFilters] = useState({
@@ -25,12 +51,14 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     loadShape: 'all',               // Cuboidal, Cylindrical, Mixed
     stackable: 'all',               // Yes, No, all
     weightBucket: 'all',            // Light <5T, Medium, Heavy >15T
-    vehicleFitAvailable: 'all',     // Yes, No, all
     pickupLocation: '',             // Searchable text
     dropLocation: '',               // Searchable text
+    consignee: 'all',              // Consignee filter
+    seller: 'all',                 // Seller/Consignor/Shipper filter
     priority: 'all',                // high, medium, low, all
     temperatureControlled: 'all',   // Yes, No, all
-    hazardous: 'all'                // Yes, No, all
+    hazardous: 'all',               // Yes, No, all
+    vehicleFitAvailability: 'all'   // Yes, No, all
   });
 
   // Get unique values for filter dropdowns
@@ -44,14 +72,34 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     return uniqueTypes;
   }, [orders]);
 
-  const pickupLocations = useMemo(() => {
-    const unique = [...new Set(orders.map(order => order.pickup).filter(Boolean))];
-    return unique;
+  // Get unique consignees (recipients only - no sellers)
+  const consignees = useMemo(() => {
+    const uniqueConsignees = new Set();
+    orders.forEach(order => {
+      // Only include consignee/recipient names and delivery locations
+      // Priority: customer (consignee name) > delivery location
+      if (order.customer) {
+        uniqueConsignees.add(order.customer);
+      }
+      if (order.deliveryLocation) {
+        uniqueConsignees.add(order.deliveryLocation);
+      }
+      if (order.delivery) {
+        uniqueConsignees.add(order.delivery);
+      }
+    });
+    return Array.from(uniqueConsignees).sort();
   }, [orders]);
 
-  const deliveryLocations = useMemo(() => {
-    const unique = [...new Set(orders.map(order => order.delivery).filter(Boolean))];
-    return unique;
+  // Get unique sellers/consignors/shippers
+  const sellers = useMemo(() => {
+    const uniqueSellers = new Set();
+    orders.forEach(order => {
+      if (order.seller) {
+        uniqueSellers.add(order.seller);
+      }
+    });
+    return Array.from(uniqueSellers).sort();
   }, [orders]);
 
   // Material Categories
@@ -83,24 +131,16 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     { value: 'flexible', label: 'Flexible (>2 days)' }
   ];
 
-  // Load Shapes
-  const loadShapes = [
-    { value: 'all', label: 'All Shapes' },
-    { value: 'cuboidal', label: 'Cuboidal' },
-    { value: 'cylindrical', label: 'Cylindrical' },
-    { value: 'irregular', label: 'Irregular' }
-  ];
-
   // Packaging Types for dropdown
   const packagingOptions = useMemo(() => {
     const types = getAllPackagingTypes();
     return [
       { value: 'all', label: 'All Packaging' },
-      ...types.map(t => ({ value: t.id, label: `${t.icon} ${t.label}` }))
+      ...types.map(t => ({ value: t.id, label: t.label }))
     ];
   }, []);
 
-  // Helper function to determine material category from order
+  // Helper functions
   const getMaterialCategory = (order) => {
     const seller = (order.seller || '').toLowerCase();
     const materialProfile = order.materialProfile || '';
@@ -115,7 +155,6 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     return 'other';
   };
 
-  // Helper function to get weight bucket
   const getWeightBucket = (order) => {
     const totalWeight = order.weight * (order.quantity || 1);
     if (totalWeight < 500) return 'light';
@@ -123,7 +162,6 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     return 'heavy';
   };
 
-  // Helper function to get dispatch time bucket
   const getDispatchTimeBucket = (order) => {
     if (!order.dispatchDate) return 'normal';
     const dispatchDate = new Date(order.dispatchDate);
@@ -135,6 +173,41 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     return 'flexible';
   };
 
+  // Check if order can fit in at least one available vehicle
+  const canOrderFitInAnyVehicle = (order) => {
+    try {
+      const { orderWeight, orderVolume } = calculateOrderWeightAndVolume(order);
+      
+      // Check if order fits in at least one vehicle by weight and volume
+      const fitsInAnyVehicle = vehicleTypes.some(vehicle => {
+        const fitsWeight = orderWeight <= vehicle.maxWeight;
+        const fitsVolume = orderVolume <= vehicle.volume;
+        
+        // For cuboidal items, also check dimensions
+        if (order.materialType === 'cuboidal' && order.dimensions) {
+          const fitsLength = order.dimensions.length <= vehicle.dimensions.length;
+          const fitsWidth = order.dimensions.width <= vehicle.dimensions.width;
+          const fitsHeight = order.dimensions.height <= vehicle.dimensions.height;
+          return fitsWeight && fitsVolume && fitsLength && fitsWidth && fitsHeight;
+        }
+        
+        // For cylindrical items, check diameter and height
+        if (order.materialType === 'cylindrical' && order.dimensions) {
+          const fitsDiameter = order.dimensions.diameter <= Math.min(vehicle.dimensions.width, vehicle.dimensions.length);
+          const fitsHeight = order.dimensions.height <= vehicle.dimensions.height;
+          return fitsWeight && fitsVolume && fitsDiameter && fitsHeight;
+        }
+        
+        return fitsWeight && fitsVolume;
+      });
+      
+      return fitsInAnyVehicle;
+    } catch (error) {
+      console.error('Error checking vehicle fit:', error);
+      return true; // Default to true if check fails to avoid filtering out orders
+    }
+  };
+
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -144,7 +217,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     return count;
   }, [filters]);
 
-  // Filter orders based on all criteria
+  // Filter orders
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
       // Basic search
@@ -156,105 +229,107 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
 
       const matchesRoute = routeFilter === 'all' || order.route === routeFilter;
       const matchesMaterial = materialFilter === 'all' || order.materialType === materialFilter;
-      // Normalize status comparison: handle space/underscore variations and case differences
       const normalizedOrderStatus = (order.status || '').toLowerCase().replace(/[\s_]+/g, '_');
       const normalizedStatusTab = statusTab.toLowerCase().replace(/[\s_]+/g, '_');
       const matchesStatus = normalizedOrderStatus === normalizedStatusTab;
 
       // Advanced filters
-      // Fragility Level
       let matchesFragility = true;
       if (filters.fragilityLevel !== 'all') {
         const fragility = assessOrderFragility(order);
         matchesFragility = fragility.score === parseInt(filters.fragilityLevel);
       }
 
-      // Packaging Type
       let matchesPackaging = true;
       if (filters.packagingType !== 'all') {
         matchesPackaging = order.packagingType === filters.packagingType;
       }
 
-      // Material Category
       let matchesMaterialCategory = true;
       if (filters.materialCategory !== 'all') {
         matchesMaterialCategory = getMaterialCategory(order) === filters.materialCategory;
       }
 
-      // Dispatch Time Bucket
       let matchesDispatchTime = true;
       if (filters.dispatchTimeBucket !== 'all') {
         matchesDispatchTime = getDispatchTimeBucket(order) === filters.dispatchTimeBucket;
       }
 
-      // Load Shape
       let matchesLoadShape = true;
       if (filters.loadShape !== 'all') {
         matchesLoadShape = order.materialType === filters.loadShape;
       }
 
-      // Stackable
       let matchesStackable = true;
       if (filters.stackable !== 'all') {
         const isStackable = order.stackable !== false;
         matchesStackable = filters.stackable === 'yes' ? isStackable : !isStackable;
       }
 
-      // Weight Bucket
       let matchesWeight = true;
       if (filters.weightBucket !== 'all') {
         matchesWeight = getWeightBucket(order) === filters.weightBucket;
       }
 
-      // Pickup Location (searchable)
       let matchesPickup = true;
       if (filters.pickupLocation) {
         matchesPickup = order.pickup?.toLowerCase().includes(filters.pickupLocation.toLowerCase());
       }
 
-      // Drop Location (searchable)
       let matchesDrop = true;
       if (filters.dropLocation) {
         matchesDrop = order.delivery?.toLowerCase().includes(filters.dropLocation.toLowerCase());
       }
 
-      // Priority
+      let matchesConsignee = true;
+      if (filters.consignee !== 'all') {
+        // Match by customer (consignee) or delivery location only (no sellers)
+        const orderConsignee = order.customer || order.deliveryLocation || order.delivery || '';
+        matchesConsignee = orderConsignee === filters.consignee;
+      }
+
+      let matchesSeller = true;
+      if (filters.seller !== 'all') {
+        matchesSeller = order.seller === filters.seller;
+      }
+
       let matchesPriority = true;
       if (filters.priority !== 'all') {
         matchesPriority = order.priority === filters.priority;
       }
 
-      // Temperature Controlled
       let matchesTempControlled = true;
       if (filters.temperatureControlled !== 'all') {
         const isTempControlled = order.temperatureControlled === true;
         matchesTempControlled = filters.temperatureControlled === 'yes' ? isTempControlled : !isTempControlled;
       }
 
-      // Hazardous
       let matchesHazardous = true;
       if (filters.hazardous !== 'all') {
         const isHazardous = order.hazardous === true;
         matchesHazardous = filters.hazardous === 'yes' ? isHazardous : !isHazardous;
       }
 
+      let matchesVehicleFit = true;
+      if (filters.vehicleFitAvailability !== 'all') {
+        const canFit = canOrderFitInAnyVehicle(order);
+        matchesVehicleFit = filters.vehicleFitAvailability === 'yes' ? canFit : !canFit;
+      }
+
       return matchesSearch && matchesRoute && matchesMaterial && matchesStatus &&
              matchesFragility && matchesPackaging && matchesMaterialCategory &&
              matchesDispatchTime && matchesLoadShape && matchesStackable &&
-             matchesWeight && matchesPickup && matchesDrop && matchesPriority &&
-             matchesTempControlled && matchesHazardous;
+             matchesWeight && matchesPickup && matchesDrop && matchesConsignee &&
+             matchesSeller && matchesPriority && matchesTempControlled && matchesHazardous && matchesVehicleFit;
     });
   }, [orders, searchTerm, routeFilter, materialFilter, statusTab, filters]);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, routeFilter, materialFilter, statusTab, filters]);
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  // Get current page orders
   const currentOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -287,22 +362,6 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
     setCurrentPage(1);
   };
 
-  const handleBulkFragilityUpdate = (orderId, updates) => {
-    if (onUpdateOrder) {
-      onUpdateOrder(orderId, updates);
-    }
-  };
-
-  const handleEditFragility = (order) => {
-    setEditingOrder(order);
-    setShowFragilityModal(true);
-  };
-
-  const handleBulkEditFragility = () => {
-    setEditingOrder(selectedOrders[0]);
-    setShowFragilityModal(true);
-  };
-
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -316,435 +375,325 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
       loadShape: 'all',
       stackable: 'all',
       weightBucket: 'all',
-      vehicleFitAvailable: 'all',
       pickupLocation: '',
       dropLocation: '',
+      consignee: 'all',
+      seller: 'all',
       priority: 'all',
       temperatureControlled: 'all',
-      hazardous: 'all'
+      hazardous: 'all',
+      vehicleFitAvailability: 'all'
     });
     setRouteFilter('all');
     setMaterialFilter('all');
     setSearchTerm('');
   };
 
-  const getPriorityColor = (priority) => {
+  const getPriorityBadgeVariant = (priority) => {
     switch (priority) {
-      case 'high': return 'text-red-600 bg-red-50';
-      case 'medium': return 'text-yellow-600 bg-yellow-50';
-      case 'low': return 'text-green-600 bg-green-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'high': return 'destructive';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'secondary';
     }
   };
 
-  const getMaterialTypeIcon = (type) => {
-    return type === 'cylindrical' ? '⚪' : '⬜';
-  };
-
-  const getFragilityBadge = (score) => {
-    const colors = {
-      1: 'bg-green-100 text-green-800',
-      2: 'bg-lime-100 text-lime-800',
-      3: 'bg-yellow-100 text-yellow-800',
-      4: 'bg-orange-100 text-orange-800',
-      5: 'bg-red-100 text-red-800'
-    };
-    return colors[score] || colors[2];
+  const getFragilityBadgeVariant = (score) => {
+    switch(score) {
+      case 5: return 'destructive';
+      case 4: return 'warning'; // orange-ish
+      default: return 'secondary';
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Order Intake & Classification</h2>
-          <p className="text-gray-600 mt-1">
-            Select orders to create dispatch plans. {filteredOrders.length} orders available.
+          <h2 className="text-2xl font-bold tracking-tight">Order Intake & Classification</h2>
+          <p className="text-muted-foreground">
+            Manage incoming orders and prepare dispatch plans.
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           {selectedOrders.length > 0 && (
-            <button
-              onClick={handleBulkEditFragility}
-              className="btn-secondary flex items-center text-sm"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingOrder(selectedOrders[0]);
+                setShowFragilityModal(true);
+              }}
             >
               <Shield className="h-4 w-4 mr-2" />
               Edit Fragility ({selectedOrders.length})
-            </button>
+            </Button>
           )}
-          <span className="text-sm text-gray-500">
-            {selectedOrders.length} of {filteredOrders.length} selected
-          </span>
+          {selectedOrders.length > 0 && onCreatePlan && (
+            <Button onClick={onCreatePlan}>
+               Create Plan ({selectedOrders.length})
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      {/* Stats/Tabs */}
+      <div className="flex space-x-1 overflow-x-auto border-b">
           {['Unplanned', 'In Planning', 'Validation Failed', 'Planned', 'Dispatched'].map((status) => {
-            // Normalize status key for consistent comparison
             const statusKey = status.toLowerCase().replace(/[\s_]+/g, '_');
             const count = orders.filter(o => {
-              // Normalize order status the same way for accurate count
               const orderStatus = (o.status || '').toLowerCase().replace(/[\s_]+/g, '_');
               return orderStatus === statusKey;
             }).length;
+            const isActive = statusTab === status.toLowerCase();
             
             return (
-              <button
+              <Button
                 key={status}
+                variant="ghost"
+                className={`rounded-none border-b-2 px-4 pb-3 pt-2 ${isActive ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
                 onClick={() => setStatusTab(status.toLowerCase())}
-                className={`
-                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                  ${statusTab === status.toLowerCase()
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
-                `}
               >
                 {status}
-                <span className={`ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium ${
-                  statusTab === status.toLowerCase() ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-900'
-                }`}>
+                <Badge variant={isActive ? "secondary" : "outline"} className="ml-2">
                   {count}
-                </span>
-              </button>
+                </Badge>
+              </Button>
             );
           })}
-        </nav>
       </div>
 
-      {/* Search and Basic Filters */}
-      <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          {/* Search */}
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search orders, DO ID, seller..."
+      {/* Filters Bar */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search orders..."
+                className="pl-8"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
             />
           </div>
-
-          {/* Route Filter */}
-          <select
-            value={routeFilter}
-            onChange={(e) => setRouteFilter(e.target.value)}
-            className="input-field"
-          >
-            <option value="all">All Routes</option>
+            <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
+               <Select value={routeFilter} onValueChange={setRouteFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Route" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Routes</SelectItem>
             {routes.map(route => (
-              <option key={route} value={route}>{route}</option>
+                    <SelectItem key={route} value={route}>{route}</SelectItem>
             ))}
-          </select>
+                </SelectContent>
+              </Select>
 
-          {/* Material Type Filter */}
-          <select
-            value={materialFilter}
-            onChange={(e) => setMaterialFilter(e.target.value)}
-            className="input-field"
-          >
-            <option value="all">All Shapes</option>
+              <Select value={materialFilter} onValueChange={setMaterialFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Shapes</SelectItem>
             {materialTypes.map(type => (
-              <option key={type} value={type}>
+                    <SelectItem key={type} value={type}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
+                    </SelectItem>
             ))}
-          </select>
+                </SelectContent>
+              </Select>
 
-          {/* Advanced Filters Toggle */}
-          <button
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`btn-secondary flex items-center justify-center ${activeFilterCount > 0 ? 'bg-primary-50 border-primary-300' : ''}`}
-          >
+               <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={activeFilterCount > 0 ? "border-primary text-primary" : ""}>
             <SlidersHorizontal className="h-4 w-4 mr-2" />
             Filters
             {activeFilterCount > 0 && (
-              <span className="ml-2 bg-primary-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {activeFilterCount}
-              </span>
+                      <Badge variant="secondary" className="ml-2 h-5 px-1.5">{activeFilterCount}</Badge>
             )}
-            {showAdvancedFilters ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
-          </button>
-
-          {/* Select All Button */}
-          <button
-            onClick={handleSelectAll}
-            className="btn-secondary flex items-center justify-center"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            {selectedOrders.length === filteredOrders.length ? 'Deselect All' : 'Select All'}
-          </button>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[600px] p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium leading-none">Advanced Filters</h4>
+                      <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-auto p-0 text-primary">
+                        Clear all
+                      </Button>
         </div>
-
-        {/* Advanced Filters Panel */}
-        {showAdvancedFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 animate-fade-in">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Advanced Filters</h3>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={clearAllFilters}
-                  className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear All Filters
-                </button>
-              )}
+                    <div className="grid grid-cols-3 gap-4">
+                       <div className="space-y-2">
+                         <Label>Fragility</Label>
+                         <Select value={filters.fragilityLevel} onValueChange={(val) => handleFilterChange('fragilityLevel', val)}>
+                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="all">All Levels</SelectItem>
+                             <SelectItem value="1">1 - Robust</SelectItem>
+                             <SelectItem value="2">2 - Durable</SelectItem>
+                             <SelectItem value="3">3 - Moderate</SelectItem>
+                             <SelectItem value="4">4 - Fragile</SelectItem>
+                             <SelectItem value="5">5 - Extremely Fragile</SelectItem>
+                           </SelectContent>
+                         </Select>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {/* Fragility Level */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Fragility Level</label>
-                <select
-                  value={filters.fragilityLevel}
-                  onChange={(e) => handleFilterChange('fragilityLevel', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  <option value="all">All Levels</option>
-                  <option value="1">1 - Robust</option>
-                  <option value="2">2 - Durable</option>
-                  <option value="3">3 - Moderate</option>
-                  <option value="4">4 - Fragile</option>
-                  <option value="5">5 - Extremely Fragile</option>
-                </select>
-              </div>
-
-              {/* Packaging Type */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Packaging Type</label>
-                <select
-                  value={filters.packagingType}
-                  onChange={(e) => handleFilterChange('packagingType', e.target.value)}
-                  className="input-field text-sm"
-                >
+                       <div className="space-y-2">
+                         <Label>Packaging</Label>
+                         <Select value={filters.packagingType} onValueChange={(val) => handleFilterChange('packagingType', val)}>
+                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                           <SelectContent>
                   {packagingOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
-                </select>
+                           </SelectContent>
+                         </Select>
               </div>
-
-              {/* Material Category */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Material Category</label>
-                <select
-                  value={filters.materialCategory}
-                  onChange={(e) => handleFilterChange('materialCategory', e.target.value)}
-                  className="input-field text-sm"
-                >
+                       <div className="space-y-2">
+                         <Label>Category</Label>
+                          <Select value={filters.materialCategory} onValueChange={(val) => handleFilterChange('materialCategory', val)}>
+                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                           <SelectContent>
                   {materialCategories.map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                   ))}
-                </select>
+                           </SelectContent>
+                         </Select>
               </div>
+                       <div className="space-y-2">
+                         <Label>Consignee</Label>
+                         <Select value={filters.consignee} onValueChange={(val) => handleFilterChange('consignee', val)}>
+                           <SelectTrigger><SelectValue placeholder="All Consignees" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="all">All Consignees</SelectItem>
+                             {consignees.map(consignee => (
+                               <SelectItem key={consignee} value={consignee}>{consignee}</SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+              </div>
+                       <div className="space-y-2">
+                         <Label>Seller/Consignor</Label>
+                         <Select value={filters.seller} onValueChange={(val) => handleFilterChange('seller', val)}>
+                           <SelectTrigger><SelectValue placeholder="All Sellers" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="all">All Sellers</SelectItem>
+                             {sellers.map(seller => (
+                               <SelectItem key={seller} value={seller}>{seller}</SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+              </div>
+                       {/* Add more filters here as needed, keeping it concise for now */}
+                       <div className="space-y-2">
+                         <Label>Priority</Label>
+                         <Select value={filters.priority} onValueChange={(val) => handleFilterChange('priority', val)}>
+                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="all">All</SelectItem>
+                             <SelectItem value="high">High</SelectItem>
+                             <SelectItem value="medium">Medium</SelectItem>
+                             <SelectItem value="low">Low</SelectItem>
+                           </SelectContent>
+                         </Select>
+              </div>
+                       <div className="space-y-2">
+                         <Label>Vehicle Fit</Label>
+                         <Select value={filters.vehicleFitAvailability} onValueChange={(val) => handleFilterChange('vehicleFitAvailability', val)}>
+                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="all">All</SelectItem>
+                             <SelectItem value="yes">Can Fit</SelectItem>
+                             <SelectItem value="no">Cannot Fit</SelectItem>
+                           </SelectContent>
+                         </Select>
+              </div>
+              </div>
+              </div>
+                </PopoverContent>
+              </Popover>
 
-              {/* Dispatch Time */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Dispatch Time</label>
-                <select
-                  value={filters.dispatchTimeBucket}
-                  onChange={(e) => handleFilterChange('dispatchTimeBucket', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  {dispatchTimeBuckets.map(bucket => (
-                    <option key={bucket.value} value={bucket.value}>{bucket.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Weight Bucket */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Weight Range</label>
-                <select
-                  value={filters.weightBucket}
-                  onChange={(e) => handleFilterChange('weightBucket', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  {weightBuckets.map(bucket => (
-                    <option key={bucket.value} value={bucket.value}>{bucket.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Stackable */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Stackable</label>
-                <select
-                  value={filters.stackable}
-                  onChange={(e) => handleFilterChange('stackable', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  <option value="all">All</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Priority</label>
-                <select
-                  value={filters.priority}
-                  onChange={(e) => handleFilterChange('priority', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-
-              {/* Pickup Location */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Pickup Location</label>
-                <input
-                  type="text"
-                  placeholder="Search pickup..."
-                  value={filters.pickupLocation}
-                  onChange={(e) => handleFilterChange('pickupLocation', e.target.value)}
-                  className="input-field text-sm"
-                  list="pickup-locations"
-                />
-                <datalist id="pickup-locations">
-                  {pickupLocations.map(loc => (
-                    <option key={loc} value={loc} />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Drop Location */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Drop Location</label>
-                <input
-                  type="text"
-                  placeholder="Search drop..."
-                  value={filters.dropLocation}
-                  onChange={(e) => handleFilterChange('dropLocation', e.target.value)}
-                  className="input-field text-sm"
-                  list="drop-locations"
-                />
-                <datalist id="drop-locations">
-                  {deliveryLocations.map(loc => (
-                    <option key={loc} value={loc} />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Temperature Controlled */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Temp Controlled</label>
-                <select
-                  value={filters.temperatureControlled}
-                  onChange={(e) => handleFilterChange('temperatureControlled', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  <option value="all">All</option>
-                  <option value="yes">Required</option>
-                  <option value="no">Not Required</option>
-                </select>
-              </div>
-
-              {/* Hazardous */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Hazardous</label>
-                <select
-                  value={filters.hazardous}
-                  onChange={(e) => handleFilterChange('hazardous', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  <option value="all">All</option>
-                  <option value="yes">Hazardous</option>
-                  <option value="no">Non-Hazardous</option>
-                </select>
-              </div>
-
-              {/* Load Shape */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Load Shape</label>
-                <select
-                  value={filters.loadShape}
-                  onChange={(e) => handleFilterChange('loadShape', e.target.value)}
-                  className="input-field text-sm"
-                >
-                  {loadShapes.map(shape => (
-                    <option key={shape.value} value={shape.value}>{shape.label}</option>
-                  ))}
-                </select>
-              </div>
+               {selectedOrders.length > 0 && selectedOrders.length !== filteredOrders.length && (
+                 <Button variant="ghost" onClick={handleSelectAll}>Select All</Button>
+               )}
+               {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length && (
+                 <Button variant="ghost" onClick={handleSelectAll}>Deselect All</Button>
+               )}
             </div>
-          </div>
-        )}
       </div>
 
-      {/* Active Filter Tags */}
+          {/* Active Tags */}
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-2">
           {Object.entries(filters).map(([key, value]) => {
             if (value === 'all' || value === '') return null;
-            const labels = {
-              fragilityLevel: `Fragility: ${value}`,
-              packagingType: `Packaging: ${value}`,
-              materialCategory: `Category: ${value}`,
-              dispatchTimeBucket: `Dispatch: ${value}`,
-              loadShape: `Shape: ${value}`,
-              stackable: `Stackable: ${value}`,
-              weightBucket: `Weight: ${value}`,
-              pickupLocation: `Pickup: ${value}`,
-              dropLocation: `Drop: ${value}`,
-              priority: `Priority: ${value}`,
-              temperatureControlled: `Temp: ${value}`,
-              hazardous: `Hazardous: ${value}`
+            // Format filter key for display
+            const formatKey = (k) => {
+              const keyMap = {
+                'fragilityLevel': 'Fragility',
+                'packagingType': 'Packaging',
+                'materialCategory': 'Category',
+                'dispatchTimeBucket': 'Dispatch Time',
+                'loadShape': 'Load Shape',
+                'weightBucket': 'Weight',
+                'pickupLocation': 'Pickup',
+                'dropLocation': 'Drop',
+                'consignee': 'Consignee',
+                'seller': 'Seller',
+                'priority': 'Priority',
+                'temperatureControlled': 'Temp Control',
+                'hazardous': 'Hazardous',
+                'vehicleFitAvailability': 'Vehicle Fit'
+              };
+              return keyMap[k] || k;
             };
             return (
-              <span
-                key={key}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700"
-              >
-                {labels[key]}
-                <button
-                  onClick={() => handleFilterChange(key, key === 'pickupLocation' || key === 'dropLocation' ? '' : 'all')}
-                  className="ml-2 hover:text-primary-900"
+                  <Badge key={key} variant="secondary" className="px-2 py-1">
+                    {formatKey(key)}: {value}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-3 w-3 ml-2 hover:bg-transparent"
+                      onClick={() => handleFilterChange(key, key.includes('Location') ? '' : 'all')}
                 >
                   <X className="h-3 w-3" />
-                </button>
-              </span>
+                    </Button>
+                  </Badge>
             );
           })}
         </div>
       )}
+        </CardContent>
+      </Card>
 
-      {/* Orders Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="table-header">
-              <tr>
-                <th className="px-4 py-3 text-left">
+      {/* Data Table */}
+      <Card>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">
                   <input
                     type="checkbox"
                     checked={filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
-                </th>
-                <th className="px-4 py-3 text-left">Order Details</th>
-                <th className="px-4 py-3 text-left">Route</th>
-                <th className="px-4 py-3 text-left">Material</th>
-                <th className="px-4 py-3 text-left">Fragility</th>
-                <th className="px-4 py-3 text-left">Packaging</th>
-                <th className="px-4 py-3 text-left">Qty</th>
-                <th className="px-4 py-3 text-left">Weight</th>
-                <th className="px-4 py-3 text-left">Priority</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentOrders.map((order) => {
+                </TableHead>
+                <TableHead>Order Details</TableHead>
+                <TableHead>Route</TableHead>
+                <TableHead>Material</TableHead>
+                <TableHead>Fragility</TableHead>
+                <TableHead>Packaging</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Weight</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentOrders.length > 0 ? (
+                currentOrders.map((order) => {
                 const isSelected = selectedOrders.some(selected => selected.id === order.id);
                 let fragility;
                 try {
@@ -754,123 +703,99 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
                 }
                 
                 return (
-                  <tr
+                    <TableRow 
                     key={order.id}
-                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-primary-50 border-l-4 border-primary-500' : ''
-                    }`}
+                      data-state={isSelected ? "selected" : undefined}
+                      className="cursor-pointer"
                     onClick={() => handleOrderToggle(order)}
                   >
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleOrderToggle(order)}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <Hash className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{order.id}</div>
-                          <div className="text-xs text-gray-500">DO: {order.doId}</div>
-                          <div className="text-xs text-gray-400">{order.seller}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{order.id}</span>
+                          <span className="text-xs text-muted-foreground">{order.seller}</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-start">
-                        <MapPin className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{order.routeName || order.route}</div>
-                          <div className="text-xs text-gray-500 max-w-[150px] truncate">{order.pickup}</div>
-                          <div className="text-xs text-gray-400 max-w-[150px] truncate">→ {order.delivery}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col max-w-[150px]">
+                          <span className="font-medium truncate">{order.route}</span>
+                          <span className="text-xs text-muted-foreground truncate">{order.pickup} → {order.delivery}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                         <div className="flex items-center gap-2">
+                            {order.materialType === 'cylindrical' ? (
+                                <div className="w-2 h-2 rounded-full bg-slate-400" />
+                            ) : (
+                                <div className="w-2 h-2 bg-slate-400" />
+                            )}
+                            <span className="capitalize">{order.materialType}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center">
-                        <span className="text-lg mr-1">{getMaterialTypeIcon(order.materialType)}</span>
-                        <span className="text-sm text-gray-700 capitalize">{order.materialType}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getFragilityBadge(fragility.score)}`}>
-                        <span 
-                          className="w-2 h-2 rounded-full mr-1.5" 
-                          style={{ backgroundColor: fragility.color }}
-                        />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getFragilityBadgeVariant(fragility.score)}>
                         {fragility.score}/5 {fragility.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <span className="mr-1">
-                          {order.packagingType ? getPackagingType(order.packagingType)?.icon || '📦' : '📦'}
-                        </span>
-                        <span className="capitalize text-xs">
-                          {order.packagingType ? (getPackagingType(order.packagingType)?.label || 'Box') : 'Box'}
-                        </span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                         <div className="flex items-center gap-2">
+                           {(() => {
+                             const IconComponent = getPackagingIcon(order.packagingType);
+                             return <IconComponent className="h-4 w-4 text-muted-foreground" />;
+                           })()}
+                           <span className="text-xs capitalize">{getPackagingType(order.packagingType)?.label || 'Box'}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{order.quantity}</td>
-                    <td className="px-4 py-3">
-                      <div className="text-sm text-gray-900">{order.weight} kg</div>
-                      <div className="text-xs text-gray-500">
-                        Total: {(order.weight * order.quantity).toLocaleString()} kg
+                      </TableCell>
+                      <TableCell className="text-right">{order.quantity}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col">
+                          <span>{order.weight} kg</span>
+                          <span className="text-xs text-muted-foreground">Total: {(order.weight * order.quantity).toLocaleString()}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(order.priority)}`}>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPriorityBadgeVariant(order.priority)} className="capitalize">
                         {order.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        order.status === 'Validation Failed' ? 'bg-red-100 text-red-800' :
-                        order.status === 'In Planning' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
                         {order.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditFragility(order);
-                        }}
-                        className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50"
-                        title="Edit Fragility & Packaging"
+                        </Badge>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setEditingOrder(order);
+                            setShowFragilityModal(true);
+                          }}
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                 );
-              })}
-            </tbody>
-          </table>
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={11} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Try adjusting your search criteria or filters.
-            </p>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearAllFilters}
-                className="mt-3 text-sm text-primary-600 hover:text-primary-700"
-              >
-                Clear all filters
-              </button>
-            )}
-          </div>
-        )}
+      </Card>
 
         {/* Pagination */}
         {filteredOrders.length > 0 && (
@@ -883,47 +808,38 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder }
             onItemsPerPageChange={handleItemsPerPageChange}
           />
         )}
-      </div>
 
-      {/* Fragility Modal */}
+      {/* Fragility Modal - Keep existing logic but wrap or style if needed, or assume it works as is */}
       {showFragilityModal && editingOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">
                   {selectedOrders.length > 1 ? `Bulk Edit (${selectedOrders.length} Orders)` : 'Edit Fragility & Packaging'}
                 </h2>
-                <button
-                  onClick={() => setShowFragilityModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-6 w-6" />
-                </button>
+              <Button variant="ghost" size="icon" onClick={() => setShowFragilityModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
               </div>
               
               <FragilityPanel
-                orders={selectedOrders.length > 1 ? selectedOrders : [editingOrder]}
+              orders={selectedOrders.length > 1 && selectedOrders.includes(editingOrder) ? selectedOrders : [editingOrder]}
                 selectedOrder={editingOrder}
                 onUpdateOrder={(id, updates) => {
-                  if (selectedOrders.length > 1) {
+                if (selectedOrders.length > 1 && selectedOrders.some(o => o.id === editingOrder.id)) {
                     selectedOrders.forEach(order => {
-                      handleBulkFragilityUpdate(order.id, updates);
+                    onUpdateOrder(order.id, updates);
                     });
                   } else {
-                    handleBulkFragilityUpdate(id, updates);
+                  onUpdateOrder(id, updates);
                   }
                 }}
               />
 
               <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setShowFragilityModal(false)}
-                  className="btn-primary"
-                >
+              <Button onClick={() => setShowFragilityModal(false)}>
                   Done
-                </button>
-              </div>
+              </Button>
             </div>
           </div>
         </div>

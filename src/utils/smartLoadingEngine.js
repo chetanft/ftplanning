@@ -5,6 +5,7 @@
 
 import { assessOrderFragility, checkStackingCompatibility, getMaxLoadBearing, calculateLoadRiskScore } from './fragilityScoring.js';
 import { checkPackagingCompatibility, getPackagingType } from './packagingTypes.js';
+import { ConstraintsEngine } from './constraintsEngine.js';
 
 // Loading zones in the vehicle
 export const LOADING_ZONES = {
@@ -102,6 +103,57 @@ export class SmartLoadingEngine {
     const loadPlan = this.finalizeLoadPlan(optimizedItems);
 
     return loadPlan;
+  }
+
+  /**
+   * Evaluate a manually created or edited plan
+   * @param {Array} itemsWithPositions - Array of items with positions
+   * @returns {Object} - Evaluated plan with metrics and warnings
+   */
+  evaluateManualPlan(itemsWithPositions) {
+    // Step 1: Analyze all items to ensure we have fragility/packaging data
+    const analyzedItems = this.analyzeItems(itemsWithPositions);
+
+    // Step 2: Validate positions and check for collisions/support
+    const constraintsEngine = new ConstraintsEngine(this.vehicle, this.options);
+
+    const validatedItems = analyzedItems.map(item => {
+      if (!item.position) {
+        return { ...item, isValid: false, placementWarning: 'Item has no position' };
+      }
+
+      // Use ConstraintsEngine for comprehensive validation
+      const otherItems = analyzedItems.filter(i => i.id !== item.id && i.position);
+      const validationResult = constraintsEngine.validatePlacement(item, item.position, otherItems);
+
+      return {
+        ...item,
+        isValid: validationResult.valid,
+        placementWarning: validationResult.valid ? null :
+          (validationResult.violations[0]?.message || validationResult.warnings[0]?.message || 'Invalid placement'),
+        validationDetails: validationResult,
+        // Calculate stacking level based on Y position
+        stackingLevel: Math.floor(item.position.y / 500)
+      };
+    });
+
+    // Step 3: Assign zones (retroactively)
+    const zonedItems = this.assignZones(validatedItems);
+
+    // Step 4: Finalize plan (calculate metrics, etc.)
+    return this.finalizeLoadPlan(zonedItems);
+  }
+
+  /**
+   * Check collision with any occupied space
+   */
+  checkCollisionWithAny(item, position, itemDims, occupiedSpaces, margin) {
+    for (const occupied of occupiedSpaces) {
+      if (this.checkCollision(position, itemDims, occupied.bounds, margin)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -218,10 +270,10 @@ export class SmartLoadingEngine {
     // Place items zone by zone
     Object.entries(itemsByZone).forEach(([zoneId, zoneItems]) => {
       const zone = this.zones[zoneId];
-      
+
       zoneItems.forEach((item, index) => {
         const position = this.findOptimalPosition(item, zone, occupiedSpaces, vehicleDims);
-        
+
         if (position) {
           const placedItem = {
             ...item,
@@ -285,7 +337,7 @@ export class SmartLoadingEngine {
           if (this.isPositionValid(item, testPosition, itemDims, occupiedSpaces, margin)) {
             // Score the position
             const score = this.scorePosition(item, testPosition, occupiedSpaces, vehicleDims);
-            
+
             if (score > bestScore) {
               bestScore = score;
               bestPosition = { ...testPosition, level: Math.floor(y / itemDims.height) };
@@ -595,11 +647,11 @@ export class SmartLoadingEngine {
         description: this.getPositionDescription(item.position),
         coordinates: item.position
       } : null,
-      fragilityWarning: item.analysis.fragility.score >= 4 
+      fragilityWarning: item.analysis.fragility.score >= 4
         ? `⚠️ FRAGILE (${item.analysis.fragility.label}) - Handle with care`
         : null,
       specialHandling: item.analysis.handlingInstructions,
-      stackingInfo: item.stackingLevel > 0 
+      stackingInfo: item.stackingLevel > 0
         ? `Stack on level ${item.stackingLevel}`
         : 'Place on floor'
     }));
@@ -610,10 +662,10 @@ export class SmartLoadingEngine {
    */
   getPositionDescription(position) {
     const xPos = position.x < this.vehicle.dimensions.length / 3 ? 'back' :
-                 position.x > (2 * this.vehicle.dimensions.length) / 3 ? 'front' : 'middle';
+      position.x > (2 * this.vehicle.dimensions.length) / 3 ? 'front' : 'middle';
     const zPos = position.z < this.vehicle.dimensions.width / 2 ? 'left' : 'right';
-    const yPos = position.y < 500 ? 'floor level' : 
-                 position.y < 1000 ? 'mid-height' : 'upper level';
+    const yPos = position.y < 500 ? 'floor level' :
+      position.y < 1000 ? 'mid-height' : 'upper level';
 
     return `${xPos.charAt(0).toUpperCase() + xPos.slice(1)}-${zPos}, ${yPos}`;
   }
@@ -623,7 +675,7 @@ export class SmartLoadingEngine {
    */
   getZoneSummary(items) {
     const summary = {};
-    
+
     Object.keys(LOADING_ZONES).forEach(zoneId => {
       const zoneItems = items.filter(i => i.zone?.id === zoneId);
       summary[zoneId] = {
@@ -648,7 +700,7 @@ export class SmartLoadingEngine {
     items.forEach(item => {
       if (!item.position) return;
       const level = Math.floor(item.position.y / 500); // 500mm per layer
-      
+
       if (!layers[level]) {
         layers[level] = {
           level,
@@ -726,6 +778,15 @@ export const generateSmartLoadPlan = (orders, vehicleSpecs, options = {}) => {
   return engine.generateOptimalLoadPlan(orders);
 };
 
+/**
+ * Evaluate a manual plan
+ */
+export const evaluateManualPlan = (itemsWithPositions, vehicleSpecs, options = {}) => {
+  const engine = new SmartLoadingEngine(vehicleSpecs, options);
+  return engine.evaluateManualPlan(itemsWithPositions);
+};
+
 export default SmartLoadingEngine;
+
 
 

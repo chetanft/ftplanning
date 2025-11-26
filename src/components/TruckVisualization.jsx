@@ -573,7 +573,7 @@ const TruckVisualization = ({ planData }) => {
         {/* 3D Visualization */}
         <div className="lg:col-span-3">
           <div className="card p-0 overflow-hidden">
-            <div className="h-96 lg:h-[600px] relative">
+            <div className="h-96 lg:h-[600px] relative border border-border rounded-lg" style={{ boxSizing: 'border-box' }}>
               {webglError ? (
                 // WebGL Error Fallback
                 <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50 to-blue-50">
@@ -608,30 +608,37 @@ const TruckVisualization = ({ planData }) => {
                   title="3D Visualization Error"
                   message="There was an issue rendering the 3D visualization."
                 >
-                  <Canvas
-                    camera={{ position: [8, 6, 8], fov: 60 }}
-                    onCreated={({ gl }) => {
-                      // Handle WebGL context lost
-                      gl.domElement.addEventListener('webglcontextlost', (event) => {
-                        event.preventDefault();
-                        console.warn('WebGL context lost');
-                        setWebglError(true);
-                      });
-                    }}
-                  >
-                    <Scene3D
-                      planData={planData}
-                      selectedItem={selectedItem}
-                      onItemSelect={handleItemSelect}
-                      showLabels={showLabels}
-                      selectedVehicleId={selectedVehicleId}
-                      colorMode={colorMode}
-                    />
-                  </Canvas>
+                  <div className="absolute inset-0">
+                    <Canvas
+                      camera={{ position: [8, 6, 8], fov: 60 }}
+                      gl={{ antialias: true, alpha: true }}
+                      onCreated={({ gl, scene }) => {
+                        // Set white/transparent background instead of black
+                        gl.setClearColor('#ffffff', 1); // White background
+                        scene.background = null;
+                        
+                        // Handle WebGL context lost
+                        gl.domElement.addEventListener('webglcontextlost', (event) => {
+                          event.preventDefault();
+                          console.warn('WebGL context lost');
+                          setWebglError(true);
+                        });
+                      }}
+                    >
+                      <Scene3D
+                        planData={planData}
+                        selectedItem={selectedItem}
+                        onItemSelect={handleItemSelect}
+                        showLabels={showLabels}
+                        selectedVehicleId={selectedVehicleId}
+                        colorMode={colorMode}
+                      />
+                    </Canvas>
+                  </div>
 
                   {/* Fragility Legend */}
                   {colorMode === 'fragility' && (
-                    <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 rounded-lg p-3 shadow-lg">
+                    <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 rounded-lg p-3 shadow-lg z-10">
                       <div className="text-xs font-medium text-gray-700 mb-2 flex items-center">
                         <Shield className="h-3 w-3 mr-1" />
                         Fragility Legend

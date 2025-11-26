@@ -10,11 +10,14 @@ import {
   ArrowDown,
   Maximize2,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  CheckCircle,
+  ThumbsUp,
+  XCircle
 } from 'lucide-react';
 import { generateStackingPlan } from '../utils/stackingOptimizer';
 import { assessOrderFragility, FRAGILITY_DESCRIPTIONS } from '../utils/fragilityScoring';
-import { getPackagingType } from '../utils/packagingTypes';
+import { getPackagingType, getPackagingIcon } from '../utils/packagingTypes';
 
 /**
  * StackingVisualization - Layer-by-layer stacking diagram with fragility indication
@@ -116,7 +119,10 @@ const StackingVisualization = ({
                           }}
                           title={`${item.name}\nFragility: ${item.fragility.label}\nWeight: ${item.weight}kg`}
                         >
-                          <div className="text-lg mb-1">{item.packagingIcon}</div>
+                          {(() => {
+                            const IconComponent = getPackagingIcon(item.packagingType || 'corrugated_box');
+                            return <IconComponent className="h-5 w-5 mb-1 text-muted-foreground" />;
+                          })()}
                           {showLabels && (
                             <>
                               <div className="text-xs font-medium truncate max-w-16">
@@ -225,7 +231,10 @@ const StackingVisualization = ({
                         onClick={() => onItemClick && onItemClick(item)}
                       >
                         <div className="flex items-center mb-2">
-                          <span className="text-xl mr-2">{item.packagingIcon}</span>
+                          {(() => {
+                            const IconComponent = getPackagingIcon(item.packagingType || 'corrugated_box');
+                            return <IconComponent className="h-5 w-5 mr-2 text-muted-foreground" />;
+                          })()}
                           <div 
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: item.fragility.color }}
@@ -369,7 +378,16 @@ const StackingVisualization = ({
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-medium text-gray-900">Stability Analysis</h4>
           <div className="flex items-center">
-            <span className="text-2xl mr-2">{stability.rating.icon}</span>
+            {(() => {
+              const iconMap = {
+                'CheckCircle': CheckCircle,
+                'ThumbsUp': ThumbsUp,
+                'AlertTriangle': AlertTriangle,
+                'XCircle': XCircle
+              };
+              const IconComponent = iconMap[stability.rating.iconName] || CheckCircle;
+              return <IconComponent className="h-6 w-6 mr-2" style={{ color: stability.rating.color }} />;
+            })()}
             <span 
               className="font-bold text-xl"
               style={{ color: stability.rating.color }}

@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { Settings, Sliders, Info, Shield, TrendingUp, Package, Truck, Route } from 'lucide-react';
+import { Settings, Sliders, Info, Shield, TrendingUp, Package, Truck, Route, Bot, Scale, MapPin, DollarSign, Container, Snowflake, AirVent } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
 
 /**
  * Plan Options Panel Component
@@ -33,31 +47,31 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
       value: 'fragility', 
       label: 'Fragility-First', 
       description: 'Prioritize fragile items for protected zones',
-      icon: '🛡️'
+      icon: Shield
     },
     { 
       value: 'weight', 
       label: 'Weight-First', 
       description: 'Heaviest items loaded first (bottom)',
-      icon: '⚖️'
+      icon: Scale
     },
     { 
       value: 'route', 
       label: 'Route-First', 
       description: 'Organize by delivery route sequence',
-      icon: '🗺️'
+      icon: MapPin
     },
     { 
       value: 'cost', 
       label: 'Cost-First', 
       description: 'Minimize overall transportation cost',
-      icon: '💰'
+      icon: DollarSign
     },
     { 
       value: 'balanced', 
       label: 'Balanced', 
       description: 'AI optimizes all factors equally',
-      icon: '⚖️'
+      icon: TrendingUp
     }
   ];
 
@@ -70,34 +84,34 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
   // Vehicle Type Options - Categories and specific vehicles
   const vehicleTypeOptions = [
     // Auto selection
-    { value: 'auto', label: '🤖 AI Auto-Select', description: 'Let AI choose optimal vehicles', category: 'auto' },
+    { value: 'auto', label: 'AI Auto-Select', description: 'Let AI choose optimal vehicles', category: 'auto', icon: Bot },
     
     // Size categories
-    { value: 'small', label: '🚚 Small (LCV)', description: 'Tata Ace and similar', category: 'category' },
-    { value: 'medium', label: '🚛 Medium (SCV)', description: 'Eicher 14ft/17ft', category: 'category' },
-    { value: 'large', label: '🚚 Large (HCV)', description: 'Containers 20ft/32ft', category: 'category' },
-    { value: 'mixed', label: '🔄 Mixed Fleet', description: 'Allow any combination', category: 'category' },
+    { value: 'small', label: 'Small (LCV)', description: 'Tata Ace and similar', category: 'category', icon: Truck },
+    { value: 'medium', label: 'Medium (SCV)', description: 'Eicher 14ft/17ft', category: 'category', icon: Truck },
+    { value: 'large', label: 'Large (HCV)', description: 'Containers 20ft/32ft', category: 'category', icon: Container },
+    { value: 'mixed', label: 'Mixed Fleet', description: 'Allow any combination', category: 'category', icon: Truck },
     
     // Specific vehicles
-    { value: 'TATA_ACE', label: '🚚 Tata Ace', description: 'Mini truck (1.5T)', category: 'specific' },
-    { value: 'EICHER_14FT', label: '🚛 Eicher 14ft', description: 'Medium truck (7T)', category: 'specific' },
-    { value: 'EICHER_17FT', label: '🚛 Eicher 17ft', description: 'Medium truck (9T)', category: 'specific' },
-    { value: 'CONTAINER_20FT', label: '📦 Container 20ft', description: 'Standard container', category: 'specific' },
-    { value: 'CONTAINER_32FT', label: '📦 Container 32ft', description: 'Large container', category: 'specific' },
-    { value: 'REFRIGERATED_14FT', label: '❄️ Refrigerated 14ft', description: 'Cold chain', category: 'specific' },
-    { value: 'REFRIGERATED_20FT', label: '❄️ Refrigerated 20ft', description: 'Large cold chain', category: 'specific' },
-    { value: 'AIR_RIDE_20FT', label: '🛡️ Air Ride 20ft', description: 'Fragile goods', category: 'specific' }
+    { value: 'TATA_ACE', label: 'Tata Ace', description: 'Mini truck (1.5T)', category: 'specific', icon: Truck },
+    { value: 'EICHER_14FT', label: 'Eicher 14ft', description: 'Medium truck (7T)', category: 'specific', icon: Truck },
+    { value: 'EICHER_17FT', label: 'Eicher 17ft', description: 'Medium truck (9T)', category: 'specific', icon: Truck },
+    { value: 'CONTAINER_20FT', label: 'Container 20ft', description: 'Standard container', category: 'specific', icon: Container },
+    { value: 'CONTAINER_32FT', label: 'Container 32ft', description: 'Large container', category: 'specific', icon: Container },
+    { value: 'REFRIGERATED_14FT', label: 'Refrigerated 14ft', description: 'Cold chain', category: 'specific', icon: Snowflake },
+    { value: 'REFRIGERATED_20FT', label: 'Refrigerated 20ft', description: 'Large cold chain', category: 'specific', icon: Snowflake },
+    { value: 'AIR_RIDE_20FT', label: 'Air Ride 20ft', description: 'Fragile goods', category: 'specific', icon: AirVent }
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Settings className="h-5 w-5 mr-2 text-primary-600" />
+          <h3 className="text-lg font-semibold flex items-center">
+            <Settings className="h-5 w-5 mr-2 text-primary" />
             Plan Generation Options
           </h3>
-          <p className="text-sm text-gray-500 mt-1">Configure parameters to customize the AI plan generation</p>
+          <p className="text-sm text-muted-foreground mt-1">Configure parameters to customize the AI plan generation</p>
         </div>
       </div>
 
@@ -105,19 +119,23 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
         {/* Left Column - Strategy & Logic */}
         <div className="space-y-6">
           {/* Load Priority Strategy */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <TrendingUp className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Load Priority Strategy</h4>
-            </div>
-            <div className="space-y-2">
-              {loadPriorityStrategies.map((strategy) => (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+                Load Priority Strategy
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {loadPriorityStrategies.map((strategy) => {
+                const Icon = strategy.icon;
+                return (
                 <label
                   key={strategy.value}
                   className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
                     localOptions.loadPriorityStrategy === strategy.value
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/50'
                   }`}
                 >
                   <input
@@ -130,30 +148,33 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
                   />
                   <div className="flex-1">
                     <div className="flex items-center">
-                      <span className="text-lg mr-2">{strategy.icon}</span>
-                      <span className="text-sm font-medium text-gray-900">{strategy.label}</span>
+                        <Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="text-sm font-medium">{strategy.label}</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{strategy.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{strategy.description}</p>
                   </div>
                 </label>
-              ))}
-            </div>
-          </div>
+                );
+              })}
+            </CardContent>
+          </Card>
 
           {/* Stack Logic */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <Package className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Stack Logic</h4>
-            </div>
-            <div className="space-y-2">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Package className="h-5 w-5 mr-2 text-primary" />
+                Stack Logic
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {stackLogicOptions.map((option) => (
                 <label
                   key={option.value}
                   className={`flex items-start p-3 rounded-lg cursor-pointer transition-colors border-2 ${
                     localOptions.stackLogic === option.value
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-gray-50'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-muted-foreground/50'
                   }`}
                 >
                   <input
@@ -165,109 +186,135 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
                     className="mt-1 mr-3"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-900">{option.label}</span>
-                    <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
+                    <span className="text-sm font-medium">{option.label}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
                   </div>
                 </label>
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Vehicle Type Override */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <Truck className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Vehicle Selection</h4>
-            </div>
-            <select
-              value={localOptions.vehicleTypeOverride}
-              onChange={(e) => handleOptionChange('vehicleTypeOverride', e.target.value)}
-              className="input-field"
-            >
-              <optgroup label="🤖 Automatic">
-                {vehicleTypeOptions.filter(o => o.category === 'auto').map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} - {option.description}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="📊 By Size Category">
-                {vehicleTypeOptions.filter(o => o.category === 'category').map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} - {option.description}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="🚛 Specific Vehicle Type">
-                {vehicleTypeOptions.filter(o => o.category === 'specific').map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label} - {option.description}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Truck className="h-5 w-5 mr-2 text-primary" />
+                Vehicle Selection
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select
+                value={localOptions.vehicleTypeOverride}
+                onValueChange={(value) => handleOptionChange('vehicleTypeOverride', value)}
+              >
+                <SelectTrigger>
+                  {(() => {
+                    const selectedOption = vehicleTypeOptions.find(o => o.value === localOptions.vehicleTypeOverride);
+                    return (
+                      <>
+                        {selectedOption && <selectedOption.icon className="h-4 w-4 mr-2" />}
+                        <SelectValue placeholder="Select vehicle type" />
+                      </>
+                    );
+                  })()}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Automatic</SelectLabel>
+                    {vehicleTypeOptions.filter(o => o.category === 'auto').map(option => {
+                      return (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label} - {option.description}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>By Size Category</SelectLabel>
+                    {vehicleTypeOptions.filter(o => o.category === 'category').map(option => {
+                      return (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label} - {option.description}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Specific Vehicle Type</SelectLabel>
+                    {vehicleTypeOptions.filter(o => o.category === 'specific').map(option => {
+                      return (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label} - {option.description}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             
-            {/* Show selected vehicle info */}
             {localOptions.vehicleTypeOverride !== 'auto' && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                 <div className="text-sm">
-                  <span className="font-medium text-blue-800">Selected: </span>
-                  <span className="text-blue-700">
+                    <span className="font-medium">Selected: </span>
+                    <span>
                     {vehicleTypeOptions.find(o => o.value === localOptions.vehicleTypeOverride)?.label || localOptions.vehicleTypeOverride}
                   </span>
                 </div>
-                <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                   Only this vehicle type will be used for plan generation
                 </p>
               </div>
             )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column - Constraints & Toggles */}
         <div className="space-y-6">
           {/* Utilization Limits */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <Sliders className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Max Utilization Limits</h4>
-            </div>
-            
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Sliders className="h-5 w-5 mr-2 text-primary" />
+                Max Utilization Limits
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
             {/* Weight Utilization */}
-            <div className="mb-4">
+              <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">Max Weight Utilization</label>
-                <span className="text-sm font-bold text-primary-600">{localOptions.maxWeightUtilization}%</span>
+                  <Label>Max Weight Utilization</Label>
+                  <span className="text-sm font-bold text-primary">{localOptions.maxWeightUtilization}%</span>
               </div>
-              <input
+                <Input
                 type="range"
                 value={localOptions.maxWeightUtilization}
                 min={70}
                 max={100}
                 onChange={(e) => handleOptionChange('maxWeightUtilization', Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                  className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>Conservative (70%)</span>
                 <span>Full (100%)</span>
               </div>
             </div>
 
             {/* Volume Utilization */}
-            <div className="mb-4">
+              <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">Max Volume Utilization</label>
-                <span className="text-sm font-bold text-primary-600">{localOptions.maxVolumeUtilization}%</span>
+                  <Label>Max Volume Utilization</Label>
+                  <span className="text-sm font-bold text-primary">{localOptions.maxVolumeUtilization}%</span>
               </div>
-              <input
+                <Input
                 type="range"
                 value={localOptions.maxVolumeUtilization}
                 min={70}
                 max={100}
                 onChange={(e) => handleOptionChange('maxVolumeUtilization', Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                  className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>Conservative (70%)</span>
                 <span>Full (100%)</span>
               </div>
@@ -276,198 +323,208 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
             {/* Fragility Buffer */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-gray-700">Fragility Spacing Buffer</label>
-                <span className="text-sm font-bold text-primary-600">{localOptions.fragilityBuffer}%</span>
+                  <Label>Fragility Spacing Buffer</Label>
+                  <span className="text-sm font-bold text-primary">{localOptions.fragilityBuffer}%</span>
               </div>
-              <input
+                <Input
                 type="range"
                 value={localOptions.fragilityBuffer}
                 min={0}
                 max={30}
                 onChange={(e) => handleOptionChange('fragilityBuffer', Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                  className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>No Buffer</span>
                 <span>30% Extra Space</span>
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Protection & Safety Toggles */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <Shield className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Protection & Safety</h4>
-            </div>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-primary" />
+                Protection & Safety
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">Protected Zone Loading</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Reserve safe zones for fragile items</p>
+                  <span className="text-sm font-medium">Protected Zone Loading</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Reserve safe zones for fragile items</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={localOptions.enableProtectedZoneLoading}
                   onChange={(e) => handleOptionChange('enableProtectedZoneLoading', e.target.checked)}
-                  className="ml-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="ml-3 rounded border-input"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">Packaging Compatibility</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Enforce packaging stacking rules</p>
+                  <span className="text-sm font-medium">Packaging Compatibility</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Enforce packaging stacking rules</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={localOptions.enforcePackagingCompatibility}
                   onChange={(e) => handleOptionChange('enforcePackagingCompatibility', e.target.checked)}
-                  className="ml-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="ml-3 rounded border-input"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">Stability Enforcement</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Validate load stability and COG</p>
+                  <span className="text-sm font-medium">Stability Enforcement</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Validate load stability and COG</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={localOptions.stabilityEnforcement}
                   onChange={(e) => handleOptionChange('stabilityEnforcement', e.target.checked)}
-                  className="ml-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="ml-3 rounded border-input"
                 />
               </label>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Optimization Toggles */}
-          <div className="card">
-            <div className="flex items-center mb-4">
-              <Route className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Optimization Options</h4>
-            </div>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Route className="h-5 w-5 mr-2 text-primary" />
+                Optimization Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">Group by Route/Cluster</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Organize orders by delivery route</p>
+                  <span className="text-sm font-medium">Group by Route/Cluster</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Organize orders by delivery route</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={localOptions.groupByRoute}
                   onChange={(e) => handleOptionChange('groupByRoute', e.target.checked)}
-                  className="ml-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="ml-3 rounded border-input"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-900">Allow Partial Vehicle Usage</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Permit vehicles at less than full capacity</p>
+                  <span className="text-sm font-medium">Allow Partial Vehicle Usage</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Permit vehicles at less than full capacity</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={localOptions.allowPartialVehicleUsage}
                   onChange={(e) => handleOptionChange('allowPartialVehicleUsage', e.target.checked)}
-                  className="ml-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="ml-3 rounded border-input"
                 />
               </label>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Risk Tolerance */}
-          <div className="card">
-            <div className="flex items-center mb-3">
-              <Info className="h-5 w-5 text-primary-600 mr-2" />
-              <h4 className="text-md font-semibold text-gray-900">Risk Tolerance Threshold</h4>
-            </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Info className="h-5 w-5 mr-2 text-primary" />
+                Risk Tolerance Threshold
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600">Acceptable Risk Level</span>
-              <span className={`text-sm font-bold px-3 py-1 rounded-full ${
-                localOptions.riskToleranceThreshold < 30 ? 'bg-green-100 text-green-800' :
-                localOptions.riskToleranceThreshold < 70 ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
+                <span className="text-sm text-muted-foreground">Acceptable Risk Level</span>
+                <Badge variant={localOptions.riskToleranceThreshold < 30 ? 'success' : localOptions.riskToleranceThreshold < 70 ? 'warning' : 'destructive'}>
                 {localOptions.riskToleranceThreshold}/100
-              </span>
+                </Badge>
             </div>
-            <input
+              <Input
               type="range"
               value={localOptions.riskToleranceThreshold}
               min={0}
               max={100}
               onChange={(e) => handleOptionChange('riskToleranceThreshold', Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>Conservative (0)</span>
               <span>Moderate (50)</span>
               <span>Aggressive (100)</span>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
               {localOptions.riskToleranceThreshold < 30 && 'Conservative: Strict safety rules, lower utilization'}
               {localOptions.riskToleranceThreshold >= 30 && localOptions.riskToleranceThreshold < 70 && 'Moderate: Balanced approach with standard rules'}
               {localOptions.riskToleranceThreshold >= 70 && 'Aggressive: Maximum utilization, flexible rules'}
             </p>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Summary Card */}
-      <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
-        <h4 className="text-md font-semibold text-gray-900 mb-3">Configuration Summary</h4>
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Configuration Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span className="text-gray-600">Strategy:</span>
+              <span className="text-muted-foreground">Strategy:</span>
             <span className="ml-1 font-medium capitalize">{localOptions.loadPriorityStrategy}</span>
           </div>
           <div>
-            <span className="text-gray-600">Stack Logic:</span>
+              <span className="text-muted-foreground">Stack Logic:</span>
             <span className="ml-1 font-medium uppercase">{localOptions.stackLogic}</span>
           </div>
           <div>
-            <span className="text-gray-600">Weight Limit:</span>
+              <span className="text-muted-foreground">Weight Limit:</span>
             <span className="ml-1 font-medium">{localOptions.maxWeightUtilization}%</span>
           </div>
           <div>
-            <span className="text-gray-600">Volume Limit:</span>
+              <span className="text-muted-foreground">Volume Limit:</span>
             <span className="ml-1 font-medium">{localOptions.maxVolumeUtilization}%</span>
           </div>
           <div>
-            <span className="text-gray-600">Protected Zones:</span>
+              <span className="text-muted-foreground">Protected Zones:</span>
             <span className="ml-1 font-medium">{localOptions.enableProtectedZoneLoading ? 'Enabled' : 'Disabled'}</span>
           </div>
           <div>
-            <span className="text-gray-600">Vehicle:</span>
+              <span className="text-muted-foreground">Vehicle:</span>
             <span className="ml-1 font-medium capitalize">{localOptions.vehicleTypeOverride}</span>
           </div>
           <div>
-            <span className="text-gray-600">Risk:</span>
+              <span className="text-muted-foreground">Risk:</span>
             <span className="ml-1 font-medium">{localOptions.riskToleranceThreshold}/100</span>
           </div>
           <div>
-            <span className="text-gray-600">Route Grouping:</span>
+              <span className="text-muted-foreground">Route Grouping:</span>
             <span className="ml-1 font-medium">{localOptions.groupByRoute ? 'On' : 'Off'}</span>
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start">
-        <Info className="h-5 w-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="p-4 flex items-start">
+          <Info className="h-5 w-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h5 className="text-sm font-medium text-blue-900">AI Plan Generation</h5>
-          <p className="text-xs text-blue-700 mt-1">
+            <h5 className="text-sm font-medium">AI Plan Generation</h5>
+            <p className="text-xs text-muted-foreground mt-1">
             The AI will use these parameters to generate an optimized load plan. You can modify these settings
             and regenerate the plan at any time. Changes will take effect on the next generation.
           </p>
         </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default PlanOptionsPanel;
-
