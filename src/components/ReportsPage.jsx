@@ -34,8 +34,21 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { manualPlans, calculateKPISummary } from '../data/manualPlans';
+// Force refresh
+import BreakageDrawer from './BreakageDrawer';
+import CostDrawer from './CostDrawer';
+import { AlertTriangle, ArrowRight, DollarSign } from 'lucide-react';
 
 const ReportsPage = ({ plans = [], orders = [] }) => {
+  const [breakageDrawerOpen, setBreakageDrawerOpen] = useState(false);
+  const [costDrawerOpen, setCostDrawerOpen] = useState(false);
+
+  // Use passed plans if available, otherwise fallback to manualPlans
+  // This ensures consistency with the Plans page while maintaining the demo data if needed
+  const activePlans = (plans && plans.length > 0) ? plans : manualPlans;
+  const kpiSummary = useMemo(() => calculateKPISummary(activePlans), [activePlans]);
+
   const [filters, setFilters] = useState({
     dateRange: 'all',
     plant: 'all',
@@ -133,23 +146,23 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
     // Calculate volume utilization across all plans
     const avgVolumeUtilization = plans.length > 0
       ? (plans.reduce((sum, plan) => {
-          const vehicle = plan.vehicles?.[0];
-          if (vehicle?.loadPlan?.metrics?.volumeUtilization) {
-            return sum + parseFloat(vehicle.loadPlan.metrics.volumeUtilization);
-          }
-          return sum;
-        }, 0) / plans.length).toFixed(1)
+        const vehicle = plan.vehicles?.[0];
+        if (vehicle?.loadPlan?.metrics?.volumeUtilization) {
+          return sum + parseFloat(vehicle.loadPlan.metrics.volumeUtilization);
+        }
+        return sum;
+      }, 0) / plans.length).toFixed(1)
       : 0;
 
     // Calculate weight utilization across all plans
     const avgWeightUtilization = plans.length > 0
       ? (plans.reduce((sum, plan) => {
-          const vehicle = plan.vehicles?.[0];
-          if (vehicle?.loadPlan?.metrics?.weightUtilization) {
-            return sum + parseFloat(vehicle.loadPlan.metrics.weightUtilization);
-          }
-          return sum;
-        }, 0) / plans.length).toFixed(1)
+        const vehicle = plan.vehicles?.[0];
+        if (vehicle?.loadPlan?.metrics?.weightUtilization) {
+          return sum + parseFloat(vehicle.loadPlan.metrics.weightUtilization);
+        }
+        return sum;
+      }, 0) / plans.length).toFixed(1)
       : 0;
 
     // Count multi-drop journeys (plans with more than 1 drop point)
@@ -412,6 +425,62 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
         </div>
       </div>
 
+      {/* Primary KPI Banner */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card
+          className="bg-red-50 border-red-100 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setBreakageDrawerOpen(true)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600 mb-1">Breakages</p>
+                <div className="flex items-baseline gap-2">
+                  <h2 className="text-3xl font-bold text-red-700">{kpiSummary.totalBreakage}</h2>
+                  <span className="text-sm text-red-600 font-medium">Bottles</span>
+                </div>
+                <p className="text-xs text-red-500 mt-2">
+                  Total breakages recorded in past manual plans
+                </p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-xs text-red-600 font-medium">
+              <span>View Analysis</span>
+              <ArrowRight className="h-3 w-3 ml-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="bg-orange-50 border-orange-100 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setCostDrawerOpen(true)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600 mb-1">Freight Cost</p>
+                <div className="flex items-baseline gap-2">
+                  <h2 className="text-3xl font-bold text-orange-700">₹{kpiSummary.totalCost.toLocaleString()}</h2>
+                </div>
+                <p className="text-xs text-orange-500 mt-2">
+                  Total freight cost for executed plans
+                </p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-full">
+                <DollarSign className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-xs text-orange-600 font-medium">
+              <span>View Optimization Opportunities</span>
+              <ArrowRight className="h-3 w-3 ml-1" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -424,7 +493,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Date Range</label>
-              <Select value={filters.dateRange} onValueChange={(value) => setFilters({...filters, dateRange: value})}>
+              <Select value={filters.dateRange} onValueChange={(value) => setFilters({ ...filters, dateRange: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select range" />
                 </SelectTrigger>
@@ -439,7 +508,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Plant</label>
-              <Select value={filters.plant} onValueChange={(value) => setFilters({...filters, plant: value})}>
+              <Select value={filters.plant} onValueChange={(value) => setFilters({ ...filters, plant: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select plant" />
                 </SelectTrigger>
@@ -453,7 +522,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Planner</label>
-              <Select value={filters.planner} onValueChange={(value) => setFilters({...filters, planner: value})}>
+              <Select value={filters.planner} onValueChange={(value) => setFilters({ ...filters, planner: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select planner" />
                 </SelectTrigger>
@@ -467,7 +536,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Vehicle Type</label>
-              <Select value={filters.vehicleType} onValueChange={(value) => setFilters({...filters, vehicleType: value})}>
+              <Select value={filters.vehicleType} onValueChange={(value) => setFilters({ ...filters, vehicleType: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -481,7 +550,7 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Mode</label>
-              <Select value={filters.mode} onValueChange={(value) => setFilters({...filters, mode: value})}>
+              <Select value={filters.mode} onValueChange={(value) => setFilters({ ...filters, mode: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select mode" />
                 </SelectTrigger>
@@ -831,6 +900,20 @@ const ReportsPage = ({ plans = [], orders = [] }) => {
           </CardContent>
         </Card>
       </div>
+      <BreakageDrawer
+        isOpen={breakageDrawerOpen}
+        onClose={setBreakageDrawerOpen}
+        plans={manualPlans}
+        totalBreakage={kpiSummary.totalBreakage}
+      />
+
+      <CostDrawer
+        isOpen={costDrawerOpen}
+        onClose={setCostDrawerOpen}
+        plans={manualPlans}
+        totalCost={kpiSummary.totalCost}
+        potentialSavings={kpiSummary.potentialSavings}
+      />
     </div>
   );
 };

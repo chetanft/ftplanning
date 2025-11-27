@@ -32,7 +32,15 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
     vehicleTypeOverride: 'auto',
     groupByRoute: true,
     stabilityEnforcement: true,
-    riskToleranceThreshold: 50
+    stabilityEnforcement: true,
+    riskToleranceThreshold: 50,
+    // Diageo Specific Options
+    enableFragilityAwarePlanning: true,
+    breakageNormThreshold: 2.5, // %
+    maxLoadingDensity: 90, // %
+    alertOnOverBreakage: true,
+    aiLearningFeedbackLoop: true,
+    defaultVehicleSuggestionLogic: 'cost-optimized'
   });
 
   const handleOptionChange = (key, value) => {
@@ -427,6 +435,30 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
             </CardContent>
           </Card>
 
+          {/* AI Learning & Feedback */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Bot className="h-5 w-5 mr-2 text-primary" />
+                AI Learning
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
+                <div className="flex-1">
+                  <span className="text-sm font-medium">AI Feedback Loop</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Learn from manual overrides</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={localOptions.aiLearningFeedbackLoop}
+                  onChange={(e) => handleOptionChange('aiLearningFeedbackLoop', e.target.checked)}
+                  className="ml-3 rounded border-input"
+                />
+              </label>
+            </CardContent>
+          </Card>
+
           {/* Risk Tolerance */}
           <Card>
             <CardHeader className="pb-3">
@@ -465,11 +497,63 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Fragility & Breakage Control */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Shield className="h-5 w-5 mr-2 text-primary" />
+                Fragility & Breakage
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
+                <div className="flex-1">
+                  <span className="text-sm font-medium">Fragility-Aware Planning</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Prioritize lower breakage risk</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={localOptions.enableFragilityAwarePlanning}
+                  onChange={(e) => handleOptionChange('enableFragilityAwarePlanning', e.target.checked)}
+                  className="ml-3 rounded border-input"
+                />
+              </label>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Label>Max Breakage Norm (%)</Label>
+                  <span className="text-sm font-bold text-primary">{localOptions.breakageNormThreshold}%</span>
+                </div>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={localOptions.breakageNormThreshold}
+                  onChange={(e) => handleOptionChange('breakageNormThreshold', Number(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Threshold for breakage alerts</p>
+              </div>
+
+              <label className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors">
+                <div className="flex-1">
+                  <span className="text-sm font-medium">Alert on Over-Risk</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Notify if plan exceeds risk threshold</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={localOptions.alertOnOverBreakage}
+                  onChange={(e) => handleOptionChange('alertOnOverBreakage', e.target.checked)}
+                  className="ml-3 rounded border-input"
+                />
+              </label>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </div >
 
       {/* Summary Card */}
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+      < Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20" >
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Configuration Summary</CardTitle>
         </CardHeader>
@@ -507,12 +591,20 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
               <span className="text-muted-foreground">Route Grouping:</span>
               <span className="ml-1 font-medium">{localOptions.groupByRoute ? 'On' : 'Off'}</span>
             </div>
+            <div>
+              <span className="text-muted-foreground">Breakage Norm:</span>
+              <span className="ml-1 font-medium">{localOptions.breakageNormThreshold}%</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">AI Learning:</span>
+              <span className="ml-1 font-medium">{localOptions.aiLearningFeedbackLoop ? 'On' : 'Off'}</span>
+            </div>
           </div>
         </CardContent>
-      </Card>
+      </Card >
 
       {/* Info Banner */}
-      <Card className="bg-primary/5 border-primary/20">
+      < Card className="bg-primary/5 border-primary/20" >
         <CardContent className="p-4 flex items-start">
           <Info className="h-5 w-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -523,8 +615,8 @@ const PlanOptionsPanel = ({ options, onOptionsChange }) => {
             </p>
           </div>
         </CardContent>
-      </Card>
-    </div>
+      </Card >
+    </div >
   );
 };
 

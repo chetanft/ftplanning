@@ -518,9 +518,33 @@ const CreatePlanPage = ({
                   <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1 max-h-40 overflow-y-auto">
                     {validationErrors.map((err, i) => <li key={i}>{err}</li>)}
                   </ul>
-                  <Button variant="outline" onClick={handleRetryValidation} className="mt-3">
-                    <RefreshCw className="h-4 w-4 mr-2" /> Retry Validation
-                  </Button>
+                  <div className="flex gap-3 mt-3">
+                    <Button variant="outline" onClick={handleRetryValidation}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Retry Validation
+                    </Button>
+                    {validationErrors.some(e => e.includes('exceeds maximum vehicle capacity')) && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          // Find the problematic order from error message
+                          const errorMsg = validationErrors.find(e => e.includes('exceeds maximum vehicle capacity'));
+                          const orderIdMatch = errorMsg.match(/Order ([^:]+):/);
+                          if (orderIdMatch && window.onSplitOrder) {
+                            window.onSplitOrder(orderIdMatch[1]);
+                            // Re-validate after split to show updated state
+                            setTimeout(() => {
+                              handleRetryValidation();
+                            }, 500);
+                          } else {
+                            alert('Split Order functionality not available');
+                          }
+                        }}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Split Order to Fit
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

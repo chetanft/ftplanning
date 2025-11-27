@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box, Cylinder, Text } from '@react-three/drei';
-import { RotateCcw, Download, Eye, EyeOff, Move, BarChart3, AlertTriangle, Shield } from 'lucide-react';
+import { RotateCcw, Download, Eye, EyeOff, Move, BarChart3, AlertTriangle, Shield, ArrowLeft } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSequencePanel from './LoadingSequencePanel';
 import { assessOrderFragility, FRAGILITY_DESCRIPTIONS } from '../utils/fragilityScoring';
@@ -46,14 +46,14 @@ const Item3D = ({ item, position, onClick, isSelected, showLabels, colorMode = '
   };
 
   const loadingOrder = item.loadingOrder;
-  const labelPosition = [position[0], position[1] + (item.dimensions.height/1000)/2 + 0.3, position[2]];
+  const labelPosition = [position[0], position[1] + (item.dimensions.height / 1000) / 2 + 0.3, position[2]];
 
   if (item.materialType === 'cylindrical') {
     return (
       <group>
         <Cylinder
           ref={meshRef}
-          args={[item.dimensions.diameter/2000, item.dimensions.diameter/2000, item.dimensions.height/1000]}
+          args={[item.dimensions.diameter / 2000, item.dimensions.diameter / 2000, item.dimensions.height / 1000]}
           position={position}
           onClick={onClick}
         >
@@ -84,7 +84,7 @@ const Item3D = ({ item, position, onClick, isSelected, showLabels, colorMode = '
     <group>
       <Box
         ref={meshRef}
-        args={[item.dimensions.length/1000, item.dimensions.height/1000, item.dimensions.width/1000]}
+        args={[item.dimensions.length / 1000, item.dimensions.height / 1000, item.dimensions.width / 1000]}
         position={position}
         onClick={onClick}
       >
@@ -129,7 +129,7 @@ const VehicleContainer = ({ vehicle, position, vehicleIndex }) => {
     <group position={position}>
       {/* Truck bed outline */}
       <Box
-        args={[dimensions.length/1000, 0.05, dimensions.width/1000]}
+        args={[dimensions.length / 1000, 0.05, dimensions.width / 1000]}
         position={[0, 0.025, 0]}
       >
         <meshStandardMaterial color={getVehicleColor(vehicleIndex)} opacity={0.3} transparent />
@@ -137,20 +137,20 @@ const VehicleContainer = ({ vehicle, position, vehicleIndex }) => {
 
       {/* Truck walls (wireframe) */}
       <Box
-        args={[dimensions.length/1000, dimensions.height/1000, dimensions.width/1000]}
-        position={[0, dimensions.height/2000, 0]}
+        args={[dimensions.length / 1000, dimensions.height / 1000, dimensions.width / 1000]}
+        position={[0, dimensions.height / 2000, 0]}
       >
         <meshStandardMaterial color={getVehicleColor(vehicleIndex)} wireframe opacity={0.4} transparent />
       </Box>
 
       {/* Vehicle ID Label */}
       <Text
-        position={[0, dimensions.height/1000 + 0.5, dimensions.width/2000 + 0.5]}
+        position={[0, dimensions.height / 1000 + 0.5, dimensions.width / 2000 + 0.5]}
         fontSize={0.3}
         color={getVehicleColor(vehicleIndex)}
         anchorX="center"
         anchorY="middle"
-        rotation={[-Math.PI/2, 0, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
       >
         {vehicle.id}
       </Text>
@@ -205,10 +205,10 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
 
     // Function to check if a position is available
     const isPositionAvailable = (x, z, y, itemLength, itemWidth, itemHeight) => {
-      const startX = Math.floor((x + containerLength/2) / gridResolution);
-      const endX = Math.ceil((x + containerLength/2 + itemLength) / gridResolution);
-      const startZ = Math.floor((z + containerWidth/2) / gridResolution);
-      const endZ = Math.ceil((z + containerWidth/2 + itemWidth) / gridResolution);
+      const startX = Math.floor((x + containerLength / 2) / gridResolution);
+      const endX = Math.ceil((x + containerLength / 2 + itemLength) / gridResolution);
+      const startZ = Math.floor((z + containerWidth / 2) / gridResolution);
+      const endZ = Math.ceil((z + containerWidth / 2 + itemWidth) / gridResolution);
       const startY = Math.floor(y / gridResolution);
       const endY = Math.ceil((y + itemHeight) / gridResolution);
 
@@ -232,10 +232,10 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
 
     // Function to mark position as occupied
     const markPositionOccupied = (x, z, y, itemLength, itemWidth, itemHeight) => {
-      const startX = Math.floor((x + containerLength/2) / gridResolution);
-      const endX = Math.ceil((x + containerLength/2 + itemLength) / gridResolution);
-      const startZ = Math.floor((z + containerWidth/2) / gridResolution);
-      const endZ = Math.ceil((z + containerWidth/2 + itemWidth) / gridResolution);
+      const startX = Math.floor((x + containerLength / 2) / gridResolution);
+      const endX = Math.ceil((x + containerLength / 2 + itemLength) / gridResolution);
+      const startZ = Math.floor((z + containerWidth / 2) / gridResolution);
+      const endZ = Math.ceil((z + containerWidth / 2 + itemWidth) / gridResolution);
       const startY = Math.floor(y / gridResolution);
       const endY = Math.ceil((y + itemHeight) / gridResolution);
 
@@ -253,8 +253,8 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
     // Function to find the lowest available position
     const findLowestPosition = (itemLength, itemWidth, itemHeight) => {
       for (let y = 0.025; y + itemHeight <= containerHeight; y += gridResolution) {
-        for (let z = -containerWidth/2; z + itemWidth <= containerWidth/2; z += gridResolution) {
-          for (let x = -containerLength/2; x + itemLength <= containerLength/2; x += gridResolution) {
+        for (let z = -containerWidth / 2; z + itemWidth <= containerWidth / 2; z += gridResolution) {
+          for (let x = -containerLength / 2; x + itemLength <= containerLength / 2; x += gridResolution) {
             if (isPositionAvailable(x, z, y, itemLength, itemWidth, itemHeight)) {
               return { x, z, y };
             }
@@ -267,14 +267,14 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
     // Create a list of all items with their properties
     const allItems = [];
     orders.forEach((order, orderIndex) => {
-      for (let i = 0; i < Math.min(order.quantity, 15); i++) { // Increased limit for better visualization
+      for (let i = 0; i < Math.min(order.quantity, 200); i++) { // Increased limit for better visualization, was 15
         const itemWidth = order.materialType === 'cylindrical'
-          ? order.dimensions.diameter/1000
-          : order.dimensions.width/1000;
+          ? order.dimensions.diameter / 1000
+          : order.dimensions.width / 1000;
         const itemLength = order.materialType === 'cylindrical'
-          ? order.dimensions.diameter/1000
-          : order.dimensions.length/1000;
-        const itemHeight = order.dimensions.height/1000;
+          ? order.dimensions.diameter / 1000
+          : order.dimensions.length / 1000;
+        const itemHeight = order.dimensions.height / 1000;
 
         allItems.push({
           ...order,
@@ -301,9 +301,9 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
           ...item,
           vehicleId: vehicle.id,
           position: [
-            vehiclePosition[0] + position.x + item.itemLength/2,
-            vehiclePosition[1] + position.y + item.itemHeight/2,
-            vehiclePosition[2] + position.z + item.itemWidth/2
+            vehiclePosition[0] + position.x + item.itemLength / 2,
+            vehiclePosition[1] + position.y + item.itemHeight / 2,
+            vehiclePosition[2] + position.z + item.itemWidth / 2
           ]
         });
 
@@ -379,7 +379,7 @@ const Scene3D = ({ planData, selectedItem, onItemSelect, showLabels, selectedVeh
   );
 };
 
-const TruckVisualization = ({ planData }) => {
+const TruckVisualization = ({ planData, onBack }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showLabels, setShowLabels] = useState(true);
   const [viewMode, setViewMode] = useState('3d');
@@ -400,22 +400,9 @@ const TruckVisualization = ({ planData }) => {
     setSelectedItem(null);
   };
 
-  // Check WebGL support
-  const checkWebGLSupport = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      return !!gl;
-    } catch (e) {
-      return false;
-    }
-  };
+  // Removed preemptive WebGL check to allow Canvas to attempt rendering
+  // WebGL errors will be caught by the ErrorBoundary or the context lost event
 
-  useEffect(() => {
-    if (!checkWebGLSupport()) {
-      setWebglError(true);
-    }
-  }, []);
 
   // Validate planData structure (after hooks)
   if (!planData) {
@@ -532,18 +519,29 @@ const TruckVisualization = ({ planData }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            <span className="text-yellow-500">Freight Tiger</span> 3D Truck Load Visualization
-          </h2>
-          <p className="text-gray-600 mt-1">
-            Interactive 3D view of your optimized load plan
-            {planData.vehicles && planData.vehicles.length > 1 && (
-              <span className="ml-2 text-sm font-medium text-blue-600">
-                ({planData.vehicles.length} vehicles)
-              </span>
-            )}
-          </p>
+        <div className="flex items-center gap-4">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Back to Plans"
+            >
+              <ArrowLeft className="h-6 w-6 text-gray-600" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              <span className="text-yellow-500">Freight Tiger</span> 3D Truck Load Visualization
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Interactive 3D view of your optimized load plan
+              {planData.vehicles && planData.vehicles.length > 1 && (
+                <span className="ml-2 text-sm font-medium text-blue-600">
+                  ({planData.vehicles.length} vehicles)
+                </span>
+              )}
+            </p>
+          </div>
         </div>
         <div className="flex items-center space-x-3">
           {/* Vehicle Selector */}
@@ -645,7 +643,7 @@ const TruckVisualization = ({ planData }) => {
                         // Set white/transparent background instead of black
                         gl.setClearColor('#ffffff', 1); // White background
                         scene.background = null;
-                        
+
                         // Handle WebGL context lost
                         gl.domElement.addEventListener('webglcontextlost', (event) => {
                           event.preventDefault();
@@ -681,7 +679,7 @@ const TruckVisualization = ({ planData }) => {
                           { score: 5, label: 'V. Fragile', color: FRAGILITY_COLORS[5] }
                         ].map(item => (
                           <div key={item.score} className="flex flex-col items-center">
-                            <div 
+                            <div
                               className="w-4 h-4 rounded"
                               style={{ backgroundColor: item.color }}
                             />
@@ -944,11 +942,10 @@ const TruckVisualization = ({ planData }) => {
                 </div>
                 <div>
                   <span className="text-gray-600">Priority:</span>
-                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                    selectedItem.priority === 'high' ? 'bg-red-100 text-red-800' :
+                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${selectedItem.priority === 'high' ? 'bg-red-100 text-red-800' :
                     selectedItem.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
+                      'bg-green-100 text-green-800'
+                    }`}>
                     {selectedItem.priority}
                   </span>
                 </div>

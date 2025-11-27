@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, Package, MapPin, Hash, Shield, Edit, X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, Package, MapPin, Hash, Shield, Edit, X, SlidersHorizontal, ArrowUpDown, Eye } from 'lucide-react';
 import { getPackagingIcon } from '../utils/packagingTypes';
 import Pagination from './Pagination';
 import FragilityPanel from './FragilityPanel';
+import OrderDetailsDrawer from './OrderDetailsDrawer';
 import { assessOrderFragility } from '../utils/fragilityScoring';
 import { getPackagingType, getAllPackagingTypes } from '../utils/packagingTypes';
 import { vehicleTypes } from '../data/mockData';
@@ -41,6 +42,8 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showFragilityModal, setShowFragilityModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [viewingOrder, setViewingOrder] = useState(null);
 
   // Advanced Filters State
   const [filters, setFilters] = useState({
@@ -58,7 +61,16 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
     priority: 'all',                // high, medium, low, all
     temperatureControlled: 'all',   // Yes, No, all
     hazardous: 'all',               // Yes, No, all
-    vehicleFitAvailability: 'all'   // Yes, No, all
+    vehicleFitAvailability: 'all',   // Yes, No, all
+    // New Diageo Filters
+    skuType: 'all',
+    bottleSize: 'all',
+    breakageRisk: 'all', // 'low' (<20%), 'medium' (20-50%), 'high' (>50%)
+    aiPlanStatus: 'all',
+    loadingInstructions: 'all',
+    routeRiskLevel: 'all',
+    vehicleRecommendation: 'all',
+    plantOrigin: 'all'
   });
 
   // Get unique values for filter dropdowns
@@ -140,11 +152,28 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
     ];
   }, []);
 
+  // New Diageo Helper Memos
+  const skuTypes = useMemo(() => [...new Set(orders.map(o => o.skuType).filter(Boolean))], [orders]);
+  const bottleSizes = useMemo(() => [...new Set(orders.map(o => o.bottleSize).filter(Boolean))].sort((a, b) => a - b), [orders]);
+  const aiPlanStatuses = useMemo(() => [...new Set(orders.map(o => o.aiPlanStatus).filter(Boolean))], [orders]);
+  const routeRiskLevels = useMemo(() => [...new Set(orders.map(o => o.routeRiskLevel).filter(Boolean))], [orders]);
+  const vehicleRecommendations = useMemo(() => [...new Set(orders.map(o => o.vehicleRecommendation).filter(Boolean))], [orders]);
+  const plantOrigins = useMemo(() => [...new Set(orders.map(o => o.plantOrigin).filter(Boolean))], [orders]);
+  const allLoadingInstructions = useMemo(() => {
+    const instructions = new Set();
+    orders.forEach(o => {
+      if (o.loadingInstructions && Array.isArray(o.loadingInstructions)) {
+        o.loadingInstructions.forEach(i => instructions.add(i));
+      }
+    });
+    return Array.from(instructions);
+  }, [orders]);
+
   // Helper functions
   const getMaterialCategory = (order) => {
     const seller = (order.seller || '').toLowerCase();
     const materialProfile = order.materialProfile || '';
-    
+
     if (seller.includes('glass') || seller.includes('bottle') || materialProfile.includes('GLASS')) return 'glass';
     if (seller.includes('electronic') || seller.includes('tech') || materialProfile.includes('ELECTRONICS')) return 'electronic';
     if (seller.includes('liquid') || seller.includes('oil') || seller.includes('beverage') || materialProfile.includes('LIQUID')) return 'liquid';
@@ -167,7 +196,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
     const dispatchDate = new Date(order.dispatchDate);
     const now = new Date();
     const diffDays = (dispatchDate - now) / (1000 * 60 * 60 * 24);
-    
+
     if (diffDays < 1) return 'urgent';
     if (diffDays <= 2) return 'normal';
     return 'flexible';
@@ -177,12 +206,12 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
   const canOrderFitInAnyVehicle = (order) => {
     try {
       const { orderWeight, orderVolume } = calculateOrderWeightAndVolume(order);
-      
+
       // Check if order fits in at least one vehicle by weight and volume
       const fitsInAnyVehicle = vehicleTypes.some(vehicle => {
         const fitsWeight = orderWeight <= vehicle.maxWeight;
         const fitsVolume = orderVolume <= vehicle.volume;
-        
+
         // For cuboidal items, also check dimensions
         if (order.materialType === 'cuboidal' && order.dimensions) {
           const fitsLength = order.dimensions.length <= vehicle.dimensions.length;
@@ -190,17 +219,17 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
           const fitsHeight = order.dimensions.height <= vehicle.dimensions.height;
           return fitsWeight && fitsVolume && fitsLength && fitsWidth && fitsHeight;
         }
-        
+
         // For cylindrical items, check diameter and height
         if (order.materialType === 'cylindrical' && order.dimensions) {
           const fitsDiameter = order.dimensions.diameter <= Math.min(vehicle.dimensions.width, vehicle.dimensions.length);
           const fitsHeight = order.dimensions.height <= vehicle.dimensions.height;
           return fitsWeight && fitsVolume && fitsDiameter && fitsHeight;
         }
-        
+
         return fitsWeight && fitsVolume;
       });
-      
+
       return fitsInAnyVehicle;
     } catch (error) {
       console.error('Error checking vehicle fit:', error);
@@ -316,11 +345,57 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
         matchesVehicleFit = filters.vehicleFitAvailability === 'yes' ? canFit : !canFit;
       }
 
+      // New Diageo Filter Logic
+      let matchesSkuType = true;
+      if (filters.skuType !== 'all') {
+        matchesSkuType = order.skuType === filters.skuType;
+      }
+
+      let matchesBottleSize = true;
+      if (filters.bottleSize !== 'all') {
+        matchesBottleSize = order.bottleSize === parseInt(filters.bottleSize);
+      }
+
+      let matchesBreakageRisk = true;
+      if (filters.breakageRisk !== 'all') {
+        const risk = order.breakageRisk || 0;
+        if (filters.breakageRisk === 'low') matchesBreakageRisk = risk < 20;
+        else if (filters.breakageRisk === 'medium') matchesBreakageRisk = risk >= 20 && risk <= 50;
+        else if (filters.breakageRisk === 'high') matchesBreakageRisk = risk > 50;
+      }
+
+      let matchesAiPlanStatus = true;
+      if (filters.aiPlanStatus !== 'all') {
+        matchesAiPlanStatus = order.aiPlanStatus === filters.aiPlanStatus;
+      }
+
+      let matchesLoadingInstructions = true;
+      if (filters.loadingInstructions !== 'all') {
+        matchesLoadingInstructions = (order.loadingInstructions || []).includes(filters.loadingInstructions);
+      }
+
+      let matchesRouteRiskLevel = true;
+      if (filters.routeRiskLevel !== 'all') {
+        matchesRouteRiskLevel = order.routeRiskLevel === filters.routeRiskLevel;
+      }
+
+      let matchesVehicleRecommendation = true;
+      if (filters.vehicleRecommendation !== 'all') {
+        matchesVehicleRecommendation = order.vehicleRecommendation === filters.vehicleRecommendation;
+      }
+
+      let matchesPlantOrigin = true;
+      if (filters.plantOrigin !== 'all') {
+        matchesPlantOrigin = order.plantOrigin === filters.plantOrigin;
+      }
+
       return matchesSearch && matchesRoute && matchesMaterial && matchesStatus &&
-             matchesFragility && matchesPackaging && matchesMaterialCategory &&
-             matchesDispatchTime && matchesLoadShape && matchesStackable &&
-             matchesWeight && matchesPickup && matchesDrop && matchesConsignee &&
-             matchesSeller && matchesPriority && matchesTempControlled && matchesHazardous && matchesVehicleFit;
+        matchesFragility && matchesPackaging && matchesMaterialCategory &&
+        matchesDispatchTime && matchesLoadShape && matchesStackable &&
+        matchesWeight && matchesPickup && matchesDrop && matchesConsignee &&
+        matchesSeller && matchesPriority && matchesTempControlled && matchesHazardous && matchesVehicleFit &&
+        matchesSkuType && matchesBottleSize && matchesBreakageRisk && matchesAiPlanStatus &&
+        matchesLoadingInstructions && matchesRouteRiskLevel && matchesVehicleRecommendation && matchesPlantOrigin;
     });
   }, [orders, searchTerm, routeFilter, materialFilter, statusTab, filters]);
 
@@ -382,7 +457,15 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
       priority: 'all',
       temperatureControlled: 'all',
       hazardous: 'all',
-      vehicleFitAvailability: 'all'
+      vehicleFitAvailability: 'all',
+      skuType: 'all',
+      bottleSize: 'all',
+      breakageRisk: 'all',
+      aiPlanStatus: 'all',
+      loadingInstructions: 'all',
+      routeRiskLevel: 'all',
+      vehicleRecommendation: 'all',
+      plantOrigin: 'all'
     });
     setRouteFilter('all');
     setMaterialFilter('all');
@@ -399,7 +482,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
   };
 
   const getFragilityBadgeVariant = (score) => {
-    switch(score) {
+    switch (score) {
       case 5: return 'destructive';
       case 4: return 'bg-amber-500 text-white'; // orange-ish
       default: return 'secondary';
@@ -432,7 +515,7 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
           )}
           {selectedOrders.length > 0 && onCreatePlan && (
             <Button onClick={onCreatePlan}>
-               Create Plan ({selectedOrders.length})
+              Create Plan ({selectedOrders.length})
             </Button>
           )}
         </div>
@@ -440,28 +523,28 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
 
       {/* Stats/Tabs */}
       <div className="flex space-x-1 overflow-x-auto border-b">
-          {['Unplanned', 'In Planning', 'Validation Failed', 'Planned', 'Dispatched'].map((status) => {
-            const statusKey = status.toLowerCase().replace(/[\s_]+/g, '_');
-            const count = orders.filter(o => {
-              const orderStatus = (o.status || '').toLowerCase().replace(/[\s_]+/g, '_');
-              return orderStatus === statusKey;
-            }).length;
-            const isActive = statusTab === status.toLowerCase();
-            
-            return (
-              <Button
-                key={status}
-                variant="ghost"
-                className={`rounded-none border-b-2 px-4 pb-3 pt-2 ${isActive ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
-                onClick={() => setStatusTab(status.toLowerCase())}
-              >
-                {status}
-                <Badge variant={isActive ? "secondary" : "outline"} className="ml-2">
-                  {count}
-                </Badge>
-              </Button>
-            );
-          })}
+        {['Unplanned', 'In Planning', 'Validation Failed', 'Planned', 'Dispatched'].map((status) => {
+          const statusKey = status.toLowerCase().replace(/[\s_]+/g, '_');
+          const count = orders.filter(o => {
+            const orderStatus = (o.status || '').toLowerCase().replace(/[\s_]+/g, '_');
+            return orderStatus === statusKey;
+          }).length;
+          const isActive = statusTab === status.toLowerCase();
+
+          return (
+            <Button
+              key={status}
+              variant="ghost"
+              className={`rounded-none border-b-2 px-4 pb-3 pt-2 ${isActive ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
+              onClick={() => setStatusTab(status.toLowerCase())}
+            >
+              {status}
+              <Badge variant={isActive ? "secondary" : "outline"} className="ml-2">
+                {count}
+              </Badge>
+            </Button>
+          );
+        })}
       </div>
 
       {/* Filters Bar */}
@@ -473,20 +556,20 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
               <Input
                 placeholder="Search orders..."
                 className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
-               <Select value={routeFilter} onValueChange={setRouteFilter}>
+              <Select value={routeFilter} onValueChange={setRouteFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Route" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Routes</SelectItem>
-            {routes.map(route => (
+                  {routes.map(route => (
                     <SelectItem key={route} value={route}>{route}</SelectItem>
-            ))}
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -496,22 +579,22 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Shapes</SelectItem>
-            {materialTypes.map(type => (
+                  {materialTypes.map(type => (
                     <SelectItem key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
                     </SelectItem>
-            ))}
+                  ))}
                 </SelectContent>
               </Select>
 
-               <Popover>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={activeFilterCount > 0 ? "border-primary text-primary" : ""}>
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            Filters
-            {activeFilterCount > 0 && (
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filters
+                    {activeFilterCount > 0 && (
                       <Badge variant="secondary" className="ml-2 h-5 px-1.5">{activeFilterCount}</Badge>
-            )}
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[600px] p-4" align="end">
@@ -521,147 +604,238 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                       <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-auto p-0 text-primary">
                         Clear all
                       </Button>
-        </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-4">
-                       <div className="space-y-2">
-                         <Label>Fragility</Label>
-                         <Select value={filters.fragilityLevel} onValueChange={(val) => handleFilterChange('fragilityLevel', val)}>
-                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="all">All Levels</SelectItem>
-                             <SelectItem value="1">1 - Robust</SelectItem>
-                             <SelectItem value="2">2 - Durable</SelectItem>
-                             <SelectItem value="3">3 - Moderate</SelectItem>
-                             <SelectItem value="4">4 - Fragile</SelectItem>
-                             <SelectItem value="5">5 - Extremely Fragile</SelectItem>
-                           </SelectContent>
-                         </Select>
-            </div>
-                       <div className="space-y-2">
-                         <Label>Packaging</Label>
-                         <Select value={filters.packagingType} onValueChange={(val) => handleFilterChange('packagingType', val)}>
-                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                           <SelectContent>
-                  {packagingOptions.map(opt => (
-                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                           </SelectContent>
-                         </Select>
-              </div>
-                       <div className="space-y-2">
-                         <Label>Category</Label>
-                          <Select value={filters.materialCategory} onValueChange={(val) => handleFilterChange('materialCategory', val)}>
-                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                           <SelectContent>
-                  {materialCategories.map(cat => (
-                               <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                  ))}
-                           </SelectContent>
-                         </Select>
-              </div>
-                       <div className="space-y-2">
-                         <Label>Consignee</Label>
-                         <Select value={filters.consignee} onValueChange={(val) => handleFilterChange('consignee', val)}>
-                           <SelectTrigger><SelectValue placeholder="All Consignees" /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="all">All Consignees</SelectItem>
-                             {consignees.map(consignee => (
-                               <SelectItem key={consignee} value={consignee}>{consignee}</SelectItem>
-                             ))}
-                           </SelectContent>
-                         </Select>
-              </div>
-                       <div className="space-y-2">
-                         <Label>Seller/Consignor</Label>
-                         <Select value={filters.seller} onValueChange={(val) => handleFilterChange('seller', val)}>
-                           <SelectTrigger><SelectValue placeholder="All Sellers" /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="all">All Sellers</SelectItem>
-                             {sellers.map(seller => (
-                               <SelectItem key={seller} value={seller}>{seller}</SelectItem>
-                             ))}
-                           </SelectContent>
-                         </Select>
-              </div>
-                       {/* Add more filters here as needed, keeping it concise for now */}
-                       <div className="space-y-2">
-                         <Label>Priority</Label>
-                         <Select value={filters.priority} onValueChange={(val) => handleFilterChange('priority', val)}>
-                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="all">All</SelectItem>
-                             <SelectItem value="high">High</SelectItem>
-                             <SelectItem value="medium">Medium</SelectItem>
-                             <SelectItem value="low">Low</SelectItem>
-                           </SelectContent>
-                         </Select>
-              </div>
-                       <div className="space-y-2">
-                         <Label>Vehicle Fit</Label>
-                         <Select value={filters.vehicleFitAvailability} onValueChange={(val) => handleFilterChange('vehicleFitAvailability', val)}>
-                           <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="all">All</SelectItem>
-                             <SelectItem value="yes">Can Fit</SelectItem>
-                             <SelectItem value="no">Cannot Fit</SelectItem>
-                           </SelectContent>
-                         </Select>
-              </div>
-              </div>
-              </div>
+                      <div className="space-y-2">
+                        <Label>Fragility</Label>
+                        <Select value={filters.fragilityLevel} onValueChange={(val) => handleFilterChange('fragilityLevel', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Levels</SelectItem>
+                            <SelectItem value="1">1 - Robust</SelectItem>
+                            <SelectItem value="2">2 - Durable</SelectItem>
+                            <SelectItem value="3">3 - Moderate</SelectItem>
+                            <SelectItem value="4">4 - Fragile</SelectItem>
+                            <SelectItem value="5">5 - Extremely Fragile</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Packaging</Label>
+                        <Select value={filters.packagingType} onValueChange={(val) => handleFilterChange('packagingType', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            {packagingOptions.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Category</Label>
+                        <Select value={filters.materialCategory} onValueChange={(val) => handleFilterChange('materialCategory', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            {materialCategories.map(cat => (
+                              <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Consignee</Label>
+                        <Select value={filters.consignee} onValueChange={(val) => handleFilterChange('consignee', val)}>
+                          <SelectTrigger><SelectValue placeholder="All Consignees" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Consignees</SelectItem>
+                            {consignees.map(consignee => (
+                              <SelectItem key={consignee} value={consignee}>{consignee}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Seller/Consignor</Label>
+                        <Select value={filters.seller} onValueChange={(val) => handleFilterChange('seller', val)}>
+                          <SelectTrigger><SelectValue placeholder="All Sellers" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Sellers</SelectItem>
+                            {sellers.map(seller => (
+                              <SelectItem key={seller} value={seller}>{seller}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Add more filters here as needed, keeping it concise for now */}
+                      <div className="space-y-2">
+                        <Label>Priority</Label>
+                        <Select value={filters.priority} onValueChange={(val) => handleFilterChange('priority', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Vehicle Fit</Label>
+                        <Select value={filters.vehicleFitAvailability} onValueChange={(val) => handleFilterChange('vehicleFitAvailability', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="yes">Can Fit</SelectItem>
+                            <SelectItem value="no">Cannot Fit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {/* Diageo Filters */}
+                      <div className="space-y-2">
+                        <Label>SKU Type</Label>
+                        <Select value={filters.skuType} onValueChange={(val) => handleFilterChange('skuType', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {skuTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Bottle Size</Label>
+                        <Select value={filters.bottleSize} onValueChange={(val) => handleFilterChange('bottleSize', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {bottleSizes.map(s => <SelectItem key={s} value={String(s)}>{s} ml</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Breakage Risk</Label>
+                        <Select value={filters.breakageRisk} onValueChange={(val) => handleFilterChange('breakageRisk', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="low">Low (&lt;20%)</SelectItem>
+                            <SelectItem value="medium">Medium (20-50%)</SelectItem>
+                            <SelectItem value="high">High (&gt;50%)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>AI Plan Status</Label>
+                        <Select value={filters.aiPlanStatus} onValueChange={(val) => handleFilterChange('aiPlanStatus', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {aiPlanStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Loading Instr.</Label>
+                        <Select value={filters.loadingInstructions} onValueChange={(val) => handleFilterChange('loadingInstructions', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {allLoadingInstructions.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Route Risk</Label>
+                        <Select value={filters.routeRiskLevel} onValueChange={(val) => handleFilterChange('routeRiskLevel', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {routeRiskLevels.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Vehicle Rec.</Label>
+                        <Select value={filters.vehicleRecommendation} onValueChange={(val) => handleFilterChange('vehicleRecommendation', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {vehicleRecommendations.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Plant Origin</Label>
+                        <Select value={filters.plantOrigin} onValueChange={(val) => handleFilterChange('plantOrigin', val)}>
+                          <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {plantOrigins.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                 </PopoverContent>
               </Popover>
 
-               {selectedOrders.length > 0 && selectedOrders.length !== filteredOrders.length && (
-                 <Button variant="ghost" onClick={handleSelectAll}>Select All</Button>
-               )}
-               {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length && (
-                 <Button variant="ghost" onClick={handleSelectAll}>Deselect All</Button>
-               )}
+              {selectedOrders.length > 0 && selectedOrders.length !== filteredOrders.length && (
+                <Button variant="ghost" onClick={handleSelectAll}>Select All</Button>
+              )}
+              {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length && (
+                <Button variant="ghost" onClick={handleSelectAll}>Deselect All</Button>
+              )}
             </div>
-      </div>
+          </div>
 
           {/* Active Tags */}
-      {activeFilterCount > 0 && (
+          {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
-          {Object.entries(filters).map(([key, value]) => {
-            if (value === 'all' || value === '') return null;
-            // Format filter key for display
-            const formatKey = (k) => {
-              const keyMap = {
-                'fragilityLevel': 'Fragility',
-                'packagingType': 'Packaging',
-                'materialCategory': 'Category',
-                'dispatchTimeBucket': 'Dispatch Time',
-                'loadShape': 'Load Shape',
-                'weightBucket': 'Weight',
-                'pickupLocation': 'Pickup',
-                'dropLocation': 'Drop',
-                'consignee': 'Consignee',
-                'seller': 'Seller',
-                'priority': 'Priority',
-                'temperatureControlled': 'Temp Control',
-                'hazardous': 'Hazardous',
-                'vehicleFitAvailability': 'Vehicle Fit'
-              };
-              return keyMap[k] || k;
-            };
-            return (
+              {Object.entries(filters).map(([key, value]) => {
+                if (value === 'all' || value === '') return null;
+                // Format filter key for display
+                const formatKey = (k) => {
+                  const keyMap = {
+                    'fragilityLevel': 'Fragility',
+                    'packagingType': 'Packaging',
+                    'materialCategory': 'Category',
+                    'dispatchTimeBucket': 'Dispatch Time',
+                    'loadShape': 'Load Shape',
+                    'weightBucket': 'Weight',
+                    'pickupLocation': 'Pickup',
+                    'dropLocation': 'Drop',
+                    'consignee': 'Consignee',
+                    'seller': 'Seller',
+                    'priority': 'Priority',
+                    'temperatureControlled': 'Temp Control',
+                    'hazardous': 'Hazardous',
+                    'vehicleFitAvailability': 'Vehicle Fit',
+                    'skuType': 'SKU Type',
+                    'bottleSize': 'Bottle Size',
+                    'breakageRisk': 'Breakage Risk',
+                    'aiPlanStatus': 'AI Status',
+                    'loadingInstructions': 'Loading Instr.',
+                    'routeRiskLevel': 'Route Risk',
+                    'vehicleRecommendation': 'Vehicle Rec.',
+                    'plantOrigin': 'Plant Origin'
+                  };
+                  return keyMap[k] || k;
+                };
+                return (
                   <Badge key={key} variant="secondary" className="px-2 py-1">
                     {formatKey(key)}: {value}
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-3 w-3 ml-2 hover:bg-transparent"
                       onClick={() => handleFilterChange(key, key.includes('Location') ? '' : 'all')}
-                >
-                  <X className="h-3 w-3" />
+                    >
+                      <X className="h-3 w-3" />
                     </Button>
                   </Badge>
-            );
-          })}
-        </div>
-      )}
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -681,9 +855,10 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                 </TableHead>
                 <TableHead>Order Details</TableHead>
                 <TableHead>Route</TableHead>
-                <TableHead>Material</TableHead>
+                <TableHead>SKU Info</TableHead>
                 <TableHead>Fragility</TableHead>
-                <TableHead>Packaging</TableHead>
+                <TableHead>Pkg & Risk</TableHead>
+                <TableHead>AI Status</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Weight</TableHead>
                 <TableHead>Priority</TableHead>
@@ -694,28 +869,28 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
             <TableBody>
               {currentOrders.length > 0 ? (
                 currentOrders.map((order) => {
-                const isSelected = selectedOrders.some(selected => selected.id === order.id);
-                let fragility;
-                try {
-                  fragility = assessOrderFragility(order);
-                } catch (e) {
-                  fragility = { score: 2, label: 'N/A', color: '#6b7280' };
-                }
-                
-                return (
-                    <TableRow 
-                    key={order.id}
+                  const isSelected = selectedOrders.some(selected => selected.id === order.id);
+                  let fragility;
+                  try {
+                    fragility = assessOrderFragility(order);
+                  } catch (e) {
+                    fragility = { score: 2, label: 'N/A', color: '#6b7280' };
+                  }
+
+                  return (
+                    <TableRow
+                      key={order.id}
                       data-state={isSelected ? "selected" : undefined}
                       className="cursor-pointer"
-                    onClick={() => handleOrderToggle(order)}
-                  >
+                      onClick={() => handleOrderToggle(order)}
+                    >
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleOrderToggle(order)}
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleOrderToggle(order)}
                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      />
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
@@ -726,74 +901,94 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
                       <TableCell>
                         <div className="flex flex-col max-w-[150px]">
                           <span className="font-medium truncate">{order.route}</span>
-                          <span className="text-xs text-muted-foreground truncate">{order.pickup} → {order.delivery}</span>
+                          <span className="text-xs text-muted-foreground">{order.pickup} → {order.delivery}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                         <div className="flex items-center gap-2">
-                            {order.materialType === 'cylindrical' ? (
-                                <div className="w-2 h-2 rounded-full bg-slate-400" />
-                            ) : (
-                                <div className="w-2 h-2 bg-slate-400" />
-                            )}
-                            <span className="capitalize">{order.materialType}</span>
-                      </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{order.skuType}</span>
+                          <span className="text-xs text-muted-foreground">{order.bottleSize} ml</span>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          {...(getFragilityBadgeVariant(fragility.score).includes('bg-') 
+                        <Badge
+                          {...(getFragilityBadgeVariant(fragility.score).includes('bg-')
                             ? { className: getFragilityBadgeVariant(fragility.score) }
                             : { variant: getFragilityBadgeVariant(fragility.score) }
                           )}
                         >
-                        {fragility.score}/5 {fragility.label}
+                          {fragility.score}/5 {fragility.label}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                         <div className="flex items-center gap-2">
-                           {(() => {
-                             const IconComponent = getPackagingIcon(order.packagingType);
-                             return <IconComponent className="h-4 w-4 text-muted-foreground" />;
-                           })()}
-                           <span className="text-xs capitalize">{getPackagingType(order.packagingType)?.label || 'Box'}</span>
-                      </div>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const IconComponent = getPackagingIcon(order.packagingType);
+                              return <IconComponent className="h-4 w-4 text-muted-foreground" />;
+                            })()}
+                            <span className="text-xs capitalize">{getPackagingType(order.packagingType)?.label || 'Box'}</span>
+                          </div>
+                          <span className={`text-xs ${order.breakageRisk > 50 ? 'text-red-500 font-bold' : order.breakageRisk > 20 ? 'text-amber-500' : 'text-green-500'}`}>
+                            Risk: {order.breakageRisk}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={order.aiPlanStatus === 'AI Recommended' ? 'default' : order.aiPlanStatus === 'Failed' ? 'destructive' : 'secondary'}>
+                          {order.aiPlanStatus}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">{order.quantity}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-col">
                           <span>{order.weight} kg</span>
                           <span className="text-xs text-muted-foreground">Total: {(order.weight * order.quantity).toLocaleString()}</span>
-                      </div>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          {...(getPriorityBadgeVariant(order.priority).includes('bg-') 
+                        <Badge
+                          {...(getPriorityBadgeVariant(order.priority).includes('bg-')
                             ? { className: `${getPriorityBadgeVariant(order.priority)} capitalize` }
                             : { variant: getPriorityBadgeVariant(order.priority), className: "capitalize" }
                           )}
                         >
-                        {order.priority}
+                          {order.priority}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                        {order.status}
+                          {order.status}
                         </Badge>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => {
-                            setEditingOrder(order);
-                            setShowFragilityModal(true);
-                          }}
-                      >
-                        <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setViewingOrder(order);
+                              setShowOrderDetails(true);
+                            }}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingOrder(order);
+                              setShowFragilityModal(true);
+                            }}
+                            title="Edit Fragility"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                );
+                  );
                 })
               ) : (
                 <TableRow>
@@ -807,8 +1002,9 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
         </div>
       </Card>
 
-        {/* Pagination */}
-        {filteredOrders.length > 0 && (
+      {/* Pagination */}
+      {
+        filteredOrders.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -817,43 +1013,56 @@ const OrderIntake = ({ orders, selectedOrders, onOrderSelection, onUpdateOrder, 
             totalItems={filteredOrders.length}
             onItemsPerPageChange={handleItemsPerPageChange}
           />
-        )}
+        )
+      }
 
       {/* Fragility Modal - Keep existing logic but wrap or style if needed, or assume it works as is */}
-      {showFragilityModal && editingOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border p-6">
+      {
+        showFragilityModal && editingOrder && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">
                   {selectedOrders.length > 1 ? `Bulk Edit (${selectedOrders.length} Orders)` : 'Edit Fragility & Packaging'}
                 </h2>
-              <Button variant="ghost" size="icon" onClick={() => setShowFragilityModal(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+                <Button variant="ghost" size="icon" onClick={() => setShowFragilityModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              
+
               <FragilityPanel
-              orders={selectedOrders.length > 1 && selectedOrders.includes(editingOrder) ? selectedOrders : [editingOrder]}
+                orders={selectedOrders.length > 1 && selectedOrders.includes(editingOrder) ? selectedOrders : [editingOrder]}
                 selectedOrder={editingOrder}
                 onUpdateOrder={(id, updates) => {
-                if (selectedOrders.length > 1 && selectedOrders.some(o => o.id === editingOrder.id)) {
+                  if (selectedOrders.length > 1 && selectedOrders.some(o => o.id === editingOrder.id)) {
                     selectedOrders.forEach(order => {
-                    onUpdateOrder(order.id, updates);
+                      onUpdateOrder(order.id, updates);
                     });
                   } else {
-                  onUpdateOrder(id, updates);
+                    onUpdateOrder(id, updates);
                   }
                 }}
               />
 
               <div className="flex justify-end mt-6">
-              <Button onClick={() => setShowFragilityModal(false)}>
+                <Button onClick={() => setShowFragilityModal(false)}>
                   Done
-              </Button>
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
+
+      {/* Order Details Drawer */}
+      <OrderDetailsDrawer
+        order={viewingOrder}
+        isOpen={showOrderDetails}
+        onClose={() => {
+          setShowOrderDetails(false);
+          setViewingOrder(null);
+        }}
+      />
     </div>
   );
 };

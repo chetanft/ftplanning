@@ -46,7 +46,7 @@ export class VehicleRecommendationEngine {
       return {
         vehicle,
         scores,
-        totalScore: this.calculateTotalScore(scores),
+        totalScore: this.calculateTotalScore(scores, options),
         recommendation: this.generateRecommendationDetails(vehicle, scores, cargoProfile)
       };
     });
@@ -106,7 +106,7 @@ export class VehicleRecommendationEngine {
     const ordersByRoute = groupOrdersByRoute(orders);
     const routeIds = Object.keys(ordersByRoute);
     let estimatedDistance = 0;
-    
+
     if (routeIds.length > 0) {
       // Calculate total distance across all routes
       routeIds.forEach(routeId => {
@@ -224,14 +224,14 @@ export class VehicleRecommendationEngine {
   scoreCostEfficiency(vehicle, cargoProfile) {
     const estimatedDistance = cargoProfile.estimatedDistance;
     const totalCost = vehicle.costPerKm * estimatedDistance;
-    
+
     // Calculate cost per kg
     const costPerKg = totalCost / Math.max(cargoProfile.totalWeight, 100);
-    
+
     // Lower cost per kg is better
     // Assuming baseline of 50 INR/kg as expensive
     const efficiency = Math.max(0, 100 - (costPerKg - 10) * 5);
-    
+
     // Adjust for premium features (worth the extra cost for fragile goods)
     if (cargoProfile.fragility.hasExtremelyFragile && vehicle.suspensionQuality >= 4) {
       return Math.min(100, efficiency + 20);
@@ -301,7 +301,7 @@ export class VehicleRecommendationEngine {
 
     // Check suitability lists
     if (vehicle.suitableFor) {
-      const matches = cargoProfile.materials.filter(m => 
+      const matches = cargoProfile.materials.filter(m =>
         vehicle.suitableFor.some(s => m.toLowerCase().includes(s.toLowerCase()))
       );
       if (matches.length > 0) {
@@ -324,13 +324,54 @@ export class VehicleRecommendationEngine {
   /**
    * Calculate total weighted score
    */
-  calculateTotalScore(scores) {
+  /**
+   * Calculate total weighted score
+   */
+  calculateTotalScore(scores, options = {}) {
+    let weights = { ...SCORING_WEIGHTS };
+
+    // Adjust weights based on strategy
+    if (options.strategy) {
+      switch (options.strategy) {
+        case 'cost':
+          weights = {
+            CAPACITY_FIT: 0.20,
+            FRAGILITY_MATCH: 0.10,
+            COST_EFFICIENCY: 0.50,
+            SECURITY_FEATURES: 0.10,
+            SPECIAL_REQUIREMENTS: 0.10
+          };
+          break;
+        case 'fragility':
+          weights = {
+            CAPACITY_FIT: 0.10,
+            FRAGILITY_MATCH: 0.40,
+            COST_EFFICIENCY: 0.10,
+            SECURITY_FEATURES: 0.30,
+            SPECIAL_REQUIREMENTS: 0.10
+          };
+          break;
+        case 'weight':
+        case 'volume':
+          weights = {
+            CAPACITY_FIT: 0.60,
+            FRAGILITY_MATCH: 0.10,
+            COST_EFFICIENCY: 0.10,
+            SECURITY_FEATURES: 0.10,
+            SPECIAL_REQUIREMENTS: 0.10
+          };
+          break;
+        default:
+          break;
+      }
+    }
+
     return (
-      scores.capacityFit * SCORING_WEIGHTS.CAPACITY_FIT +
-      scores.fragilityMatch * SCORING_WEIGHTS.FRAGILITY_MATCH +
-      scores.costEfficiency * SCORING_WEIGHTS.COST_EFFICIENCY +
-      scores.securityFeatures * SCORING_WEIGHTS.SECURITY_FEATURES +
-      scores.specialRequirements * SCORING_WEIGHTS.SPECIAL_REQUIREMENTS
+      scores.capacityFit * weights.CAPACITY_FIT +
+      scores.fragilityMatch * weights.FRAGILITY_MATCH +
+      scores.costEfficiency * weights.COST_EFFICIENCY +
+      scores.securityFeatures * weights.SECURITY_FEATURES +
+      scores.specialRequirements * weights.SPECIAL_REQUIREMENTS
     );
   }
 
@@ -401,7 +442,7 @@ export class VehicleRecommendationEngine {
    */
   generateSummary(vehicle, scores, cargoProfile) {
     const totalScore = this.calculateTotalScore(scores);
-    
+
     if (totalScore >= 85) {
       return `${vehicle.name} is highly recommended for your cargo with excellent overall compatibility.`;
     }
@@ -481,7 +522,7 @@ export const analyzeVehicleSuitability = (vehicle, orders) => {
   const engine = new VehicleRecommendationEngine([vehicle]);
   const cargoProfile = engine.analyzeCargoProfile(orders);
   const scores = engine.scoreVehicle(vehicle, cargoProfile);
-  
+
   return {
     vehicle,
     cargoProfile,

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { AlertTriangle, Package, Shield, Thermometer, Droplets, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { FRAGILITY_DESCRIPTIONS, MATERIAL_PROFILES, assessOrderFragility } from '../utils/fragilityScoring';
 import { getPackagingType, recommendPackaging, getPackagingIcon } from '../utils/packagingTypes';
+import { calculateBreakageRisk, getPackagingRecommendations, getRiskLevel } from '../utils/calculateBreakageRisk';
 import { fragilityLevels, materialProfileOptions, packagingTypeOptions } from '../data/mockData';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +19,9 @@ import { Label } from "@/components/ui/label";
 /**
  * FragilityPanel - Component for viewing and editing fragility/packaging settings
  */
-const FragilityPanel = ({ 
-  orders = [], 
-  selectedOrder = null, 
+const FragilityPanel = ({
+  orders = [],
+  selectedOrder = null,
   onUpdateOrder = null,
   onBulkUpdate = null,
   readOnly = false,
@@ -28,7 +29,7 @@ const FragilityPanel = ({
 }) => {
   const [expandedSection, setExpandedSection] = useState(initialExpandedSection);
   const [showRecommendations, setShowRecommendations] = useState(false);
-  
+
   // Update expanded section when initialExpandedSection prop changes
   useEffect(() => {
     if (initialExpandedSection) {
@@ -64,7 +65,17 @@ const FragilityPanel = ({
     return assessOrderFragility(selectedOrder);
   }, [selectedOrder]);
 
-  // Get packaging recommendations
+  // Get AI packaging recommendations with risk calculations
+  const aiPackagingRecommendations = useMemo(() => {
+    if (!selectedOrder) return [];
+    return getPackagingRecommendations(
+      selectedOrder.fragilityScore || 3,
+      selectedOrder.packagingType || 'corrugated_box',
+      { routeRisk: selectedOrder.routeRiskLevel }
+    );
+  }, [selectedOrder]);
+
+  // Get packaging recommendations (legacy)
   const packagingRecommendations = useMemo(() => {
     if (!selectedOrder) return [];
     const fragility = currentAssessment?.score || 2;
@@ -81,17 +92,28 @@ const FragilityPanel = ({
     onUpdateOrder(selectedOrder.id, { fragilityScore: score });
   };
 
-  // Handle packaging type change
+  // Handle packaging type change - recalculate risk
   const handlePackagingChange = (packagingType) => {
     if (readOnly || !onUpdateOrder || !selectedOrder) return;
-    onUpdateOrder(selectedOrder.id, { packagingType });
+
+    // Recalculate breakage risk with new packaging
+    const newRisk = calculateBreakageRisk(
+      selectedOrder.fragilityScore || 3,
+      packagingType,
+      { routeRisk: selectedOrder.routeRiskLevel }
+    );
+
+    onUpdateOrder(selectedOrder.id, {
+      packagingType,
+      breakageRisk: newRisk
+    });
   };
 
   // Handle material profile change
   const handleProfileChange = (materialProfile) => {
     if (readOnly || !onUpdateOrder || !selectedOrder) return;
     const profile = MATERIAL_PROFILES[materialProfile];
-    onUpdateOrder(selectedOrder.id, { 
+    onUpdateOrder(selectedOrder.id, {
       materialProfile,
       fragilityScore: profile?.baseFragility || 2
     });
@@ -111,12 +133,12 @@ const FragilityPanel = ({
               onClick={() => handleFragilityChange(level.score)}
               disabled={readOnly}
               className="flex flex-col h-auto py-2"
-              style={{ 
+              style={{
                 borderColor: isSelected ? level.color : undefined,
                 backgroundColor: isSelected ? `${level.color}15` : undefined
               }}
             >
-              <span 
+              <span
                 className="text-xl font-bold"
                 style={{ color: level.color }}
               >
@@ -129,22 +151,22 @@ const FragilityPanel = ({
           );
         })}
       </div>
-      
+
       {currentAssessment && (
         <Card className="mt-2" style={{ backgroundColor: `${currentAssessment.color}15` }}>
           <CardContent className="p-3">
-          <div className="flex items-center">
-            <Shield 
-              className="h-5 w-5 mr-2" 
-              style={{ color: currentAssessment.color }}
-            />
-            <span className="font-medium" style={{ color: currentAssessment.color }}>
-              {currentAssessment.label}
-            </span>
-          </div>
+            <div className="flex items-center">
+              <Shield
+                className="h-5 w-5 mr-2"
+                style={{ color: currentAssessment.color }}
+              />
+              <span className="font-medium" style={{ color: currentAssessment.color }}>
+                {currentAssessment.label}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
-            {currentAssessment.description}
-          </p>
+              {currentAssessment.description}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -159,12 +181,12 @@ const FragilityPanel = ({
     return (
       <div className="space-y-3">
         <Label>Packaging Type</Label>
-        
+
         <Select
-            value={currentPackaging}
+          value={currentPackaging}
           onValueChange={handlePackagingChange}
-            disabled={readOnly}
-          >
+          disabled={readOnly}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -173,10 +195,10 @@ const FragilityPanel = ({
               const IconComponent = getPackagingIcon(opt.id);
               return (
                 <SelectItem key={opt.id} value={opt.id}>
-            <div className="flex items-center">
+                  <div className="flex items-center">
                     <IconComponent className="h-4 w-4 mr-2" />
                     {opt.label}
-            </div>
+                  </div>
                 </SelectItem>
               );
             })}
@@ -186,40 +208,115 @@ const FragilityPanel = ({
         {packagingInfo && (
           <Card>
             <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2">
                 {(() => {
                   const IconComponent = getPackagingIcon(currentPackaging);
                   return <IconComponent className="h-6 w-6 text-muted-foreground" />;
                 })()}
                 <span className="text-sm text-muted-foreground">{packagingInfo.description}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center">
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center">
                   <Package className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span>Crush: {packagingInfo.protection.crush}/5</span>
-              </div>
-              <div className="flex items-center">
+                  <span>Crush: {packagingInfo.protection.crush}/5</span>
+                </div>
+                <div className="flex items-center">
                   <AlertTriangle className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span>Shock: {packagingInfo.protection.shock}/5</span>
-              </div>
-              <div className="flex items-center">
+                  <span>Shock: {packagingInfo.protection.shock}/5</span>
+                </div>
+                <div className="flex items-center">
                   <Droplets className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span>Moisture: {packagingInfo.protection.moisture}/5</span>
-              </div>
-              <div className="flex items-center">
+                  <span>Moisture: {packagingInfo.protection.moisture}/5</span>
+                </div>
+                <div className="flex items-center">
                   <Thermometer className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span>Temp: {packagingInfo.protection.temperature}/5</span>
+                  <span>Temp: {packagingInfo.protection.temperature}/5</span>
+                </div>
               </div>
-            </div>
               <div className="mt-2 text-xs text-muted-foreground">
-              Max stack: {packagingInfo.stackability.maxStackWeight}kg, {packagingInfo.stackability.maxStackLayers} layers
-            </div>
+                Max stack: {packagingInfo.stackability.maxStackWeight}kg, {packagingInfo.stackability.maxStackLayers} layers
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Packaging recommendations */}
-        {showRecommendations && packagingRecommendations.length > 0 && (
+
+        {/* Current Risk Display */}
+        {selectedOrder && (
+          <Card className="mt-3">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Current Breakage Risk:</span>
+                <Badge
+                  className={
+                    selectedOrder.breakageRisk < 20 ? 'bg-green-500 text-white' :
+                      selectedOrder.breakageRisk < 40 ? 'bg-yellow-500 text-white' :
+                        selectedOrder.breakageRisk < 70 ? 'bg-orange-500 text-white' :
+                          'bg-red-500 text-white'
+                  }
+                >
+                  {selectedOrder.breakageRisk}%
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Packaging Recommendations */}
+        {aiPackagingRecommendations.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">AI Packaging Suggestions</Label>
+              <Badge variant="outline" className="text-xs">
+                {aiPackagingRecommendations.length} options
+              </Badge>
+            </div>
+
+            {aiPackagingRecommendations.slice(0, 4).map((rec, idx) => {
+              const IconComponent = getPackagingIcon(rec.packaging.id);
+              const isBest = idx === 0;
+
+              return (
+                <Button
+                  key={rec.packaging.id}
+                  variant={isBest ? "default" : "outline"}
+                  onClick={() => handlePackagingChange(rec.packaging.id)}
+                  disabled={readOnly}
+                  className="w-full justify-between h-auto py-3 px-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <IconComponent className="h-4 w-4" />
+                    <div className="text-left">
+                      <div className="font-medium text-sm">{rec.packaging.label}</div>
+                      <div className="text-xs opacity-80">
+                        {rec.currentRisk}% → {rec.projectedRisk}%
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {isBest && (
+                      <Badge className="bg-green-500 text-white text-xs mb-1">
+                        Best Choice
+                      </Badge>
+                    )}
+                    <Badge
+                      className="bg-green-500 text-white text-xs"
+                    >
+                      -{rec.improvementPercent}%
+                    </Badge>
+                  </div>
+                </Button>
+              );
+            })}
+
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Tip: Better packaging reduces breakage risk and protects your shipment
+            </p>
+          </div>
+        )}
+
+        {/* Legacy packaging recommendations - hidden when AI recommendations available */}
+        {aiPackagingRecommendations.length === 0 && showRecommendations && packagingRecommendations.length > 0 && (
           <div className="mt-3 space-y-2">
             <Label className="text-sm">Recommended Packaging:</Label>
             {packagingRecommendations.slice(0, 3).map((rec, idx) => {
@@ -235,9 +332,9 @@ const FragilityPanel = ({
                   <span className="flex items-center gap-2">
                     <IconComponent className="h-4 w-4" />
                     {rec.packaging.label}
-                    </span>
+                  </span>
                   <Badge className="bg-green-500 text-white text-xs">
-                      {rec.suitabilityScore}% match
+                    {rec.suitabilityScore}% match
                   </Badge>
                 </Button>
               );
@@ -245,13 +342,15 @@ const FragilityPanel = ({
           </div>
         )}
 
-        <Button
-          variant="link"
-          onClick={() => setShowRecommendations(!showRecommendations)}
-          className="p-0 h-auto"
-        >
-          {showRecommendations ? 'Hide recommendations' : 'Show recommendations'}
-        </Button>
+        {aiPackagingRecommendations.length === 0 && (
+          <Button
+            variant="link"
+            onClick={() => setShowRecommendations(!showRecommendations)}
+            className="p-0 h-auto mt-2"
+          >
+            {showRecommendations ? 'Hide recommendations' : 'Show recommendations'}
+          </Button>
+        )}
       </div>
     );
   };
@@ -272,11 +371,11 @@ const FragilityPanel = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-          {materialProfileOptions.map(opt => (
+            {materialProfileOptions.map(opt => (
               <SelectItem key={opt.id} value={opt.id}>
-              {opt.label} (Fragility: {opt.fragilityScore})
+                {opt.label} (Fragility: {opt.fragilityScore})
               </SelectItem>
-          ))}
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -293,68 +392,68 @@ const FragilityPanel = ({
           <CardTitle className="text-sm">Load Fragility Summary</CardTitle>
         </CardHeader>
         <CardContent>
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          <div className="text-center">
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="text-center">
               <div className="text-2xl font-bold">{fragilitySummary.average}</div>
               <div className="text-xs text-muted-foreground">Avg Fragility</div>
-          </div>
-          <div className="text-center">
+            </div>
+            <div className="text-center">
               <div className="text-2xl font-bold">{fragilitySummary.totalOrders}</div>
               <div className="text-xs text-muted-foreground">Total Orders</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold" style={{ color: FRAGILITY_DESCRIPTIONS[fragilitySummary.max]?.color }}>
-              {fragilitySummary.max}
             </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold" style={{ color: FRAGILITY_DESCRIPTIONS[fragilitySummary.max]?.color }}>
+                {fragilitySummary.max}
+              </div>
               <div className="text-xs text-muted-foreground">Max Fragility</div>
+            </div>
           </div>
-        </div>
 
-        {/* Distribution bar */}
-        <div className="space-y-1">
+          {/* Distribution bar */}
+          <div className="space-y-1">
             <div className="text-xs text-muted-foreground mb-1">Distribution:</div>
-          <div className="flex h-6 rounded-lg overflow-hidden">
-            {[1, 2, 3, 4, 5].map(level => {
-              const count = fragilitySummary.distribution[level] || 0;
-              const percentage = (count / fragilitySummary.totalOrders) * 100;
-              if (percentage === 0) return null;
-              
-              return (
-                <div
-                  key={level}
-                  className="flex items-center justify-center text-xs text-white font-medium"
-                  style={{ 
-                    width: `${percentage}%`,
-                    backgroundColor: fragilityLevels.find(l => l.score === level)?.color,
-                    minWidth: percentage > 0 ? '20px' : 0
-                  }}
-                  title={`Level ${level}: ${count} orders (${percentage.toFixed(1)}%)`}
-                >
-                  {percentage >= 10 ? count : ''}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+            <div className="flex h-6 rounded-lg overflow-hidden">
+              {[1, 2, 3, 4, 5].map(level => {
+                const count = fragilitySummary.distribution[level] || 0;
+                const percentage = (count / fragilitySummary.totalOrders) * 100;
+                if (percentage === 0) return null;
 
-        {/* Warnings */}
-        {fragilitySummary.hasExtremelyFragile && (
+                return (
+                  <div
+                    key={level}
+                    className="flex items-center justify-center text-xs text-white font-medium"
+                    style={{
+                      width: `${percentage}%`,
+                      backgroundColor: fragilityLevels.find(l => l.score === level)?.color,
+                      minWidth: percentage > 0 ? '20px' : 0
+                    }}
+                    title={`Level ${level}: ${count} orders (${percentage.toFixed(1)}%)`}
+                  >
+                    {percentage >= 10 ? count : ''}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Warnings */}
+          {fragilitySummary.hasExtremelyFragile && (
             <div className="mt-3 p-2 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center">
               <AlertTriangle className="h-4 w-4 text-destructive mr-2" />
               <span className="text-sm text-destructive">
-              Contains extremely fragile items - special handling required
-            </span>
-          </div>
-        )}
+                Contains extremely fragile items - special handling required
+              </span>
+            </div>
+          )}
 
-        {fragilitySummary.hasFragile && !fragilitySummary.hasExtremelyFragile && (
+          {fragilitySummary.hasFragile && !fragilitySummary.hasExtremelyFragile && (
             <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center">
               <AlertTriangle className="h-4 w-4 text-amber-600 mr-2" />
               <span className="text-sm text-amber-600">
-              Contains fragile items - careful handling required
-            </span>
-          </div>
-        )}
+                Contains fragile items - careful handling required
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -363,7 +462,7 @@ const FragilityPanel = ({
   // Collapsible section component
   const Section = ({ id, title, icon: Icon, children }) => {
     const isExpanded = expandedSection === id;
-    
+
     return (
       <Card>
         <button

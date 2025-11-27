@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Package, Settings, BarChart3, FileText, Map as MapIcon, X } from 'lucide-react';
 import AppLayout from './components/layout/AppLayout';
 import OrderIntake from './components/OrderIntake';
@@ -100,6 +100,14 @@ function App() {
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
   const googleMapsService = useMemo(() => new GoogleMapsService(googleMapsApiKey), [googleMapsApiKey]);
 
+  // Expose splitOrder handler globally for CreatePlanPage
+  useEffect(() => {
+    window.onSplitOrder = handleSplitOrder;
+    return () => {
+      delete window.onSplitOrder;
+    };
+  }, [orders, selectedOrders]);
+
   const handleUpdateOrder = (orderId, updates) => {
     setOrders(prevOrders =>
       prevOrders.map(order =>
@@ -148,6 +156,63 @@ function App() {
 
       return filtered;
     });
+  };
+
+  const handleSplitOrder = (orderId) => {
+    const orderToSplit = orders.find(o => o.id === orderId);
+    if (!orderToSplit) return;
+
+    // Default to Eicher 14ft capacity for splitting if not specified
+    // In a real app, this might be dynamic or user-selected
+    const MAX_WEIGHT_PER_VEHICLE = 4500; // kg
+    const MAX_VOLUME_PER_VEHICLE = 16.6; // m3
+
+    const weightPerUnit = orderToSplit.weight;
+    const volumePerUnit = orderToSplit.volume || 0.01; // Fallback
+
+    // Calculate max quantity per vehicle based on weight
+    const maxQtyByWeight = Math.floor(MAX_WEIGHT_PER_VEHICLE / weightPerUnit);
+
+    // Calculate max quantity per vehicle based on volume
+    const maxQtyByVolume = Math.floor(MAX_VOLUME_PER_VEHICLE / volumePerUnit);
+
+    // Use the more restrictive limit
+    const maxQtyPerVehicle = Math.min(maxQtyByWeight, maxQtyByVolume);
+
+    if (maxQtyPerVehicle <= 0) {
+      alert("Item is too large to fit in a standard vehicle even individually!");
+      return;
+    }
+
+    const newOrders = [];
+    let remainingQty = orderToSplit.quantity;
+    let splitCount = 1;
+
+    while (remainingQty > 0) {
+      const chunkQty = Math.min(remainingQty, maxQtyPerVehicle);
+
+      newOrders.push({
+        ...orderToSplit,
+        id: `${orderToSplit.id}-SPLIT-${splitCount}`,
+        doId: `${orderToSplit.doId}-${splitCount}`,
+        quantity: chunkQty,
+        originalOrderId: orderToSplit.id,
+        isSplit: true
+      });
+
+      remainingQty -= chunkQty;
+      splitCount++;
+    }
+
+    // Update orders state: remove original, add new splits
+    const updatedOrders = orders.filter(o => o.id !== orderId).concat(newOrders);
+    setOrders(updatedOrders);
+
+    // Update selected orders: remove original, add new splits
+    const updatedSelected = selectedOrders.filter(o => o.id !== orderId).concat(newOrders);
+    setSelectedOrders(updatedSelected);
+
+    alert(`Order split into ${newOrders.length} smaller orders to fit vehicle capacity.`);
   };
 
   // Calculate available orders (orders not currently selected)
@@ -334,6 +399,7 @@ function App() {
             availableOrders={availableOrders}
             onAddOrder={handleAddOrder}
             onRemoveOrder={handleRemoveOrder}
+            onSplitOrder={handleSplitOrder}
           />
         ) : (
           <Card className="text-center py-12">
@@ -408,6 +474,7 @@ function App() {
           >
             <TruckVisualization
               planData={planData}
+              onBack={() => setCurrentView('plans')}
             />
           </ErrorBoundary>
         ) : (

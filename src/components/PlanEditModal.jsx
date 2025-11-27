@@ -133,6 +133,12 @@ const PlanEditModal = ({ isOpen, onClose, onSave, currentPlan, allOrders, vehicl
                                         {Math.round(metrics.volumeUtilization)}%
                                     </span>
                                 </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-muted-foreground">Fragility Risk</span>
+                                    <span className={`font-medium ${metrics.riskScore > 50 ? 'text-red-600' : metrics.riskScore > 20 ? 'text-orange-600' : 'text-green-600'}`}>
+                                        {Math.round(metrics.riskScore || 0)}%
+                                    </span>
+                                </div>
                             </div>
                         )}
                         <Button variant="ghost" size="icon" onClick={onClose}>

@@ -42,13 +42,14 @@ const AIRecommendationsPanel = ({
   const [expandedRecommendation, setExpandedRecommendation] = useState(0);
   const [showStackingPlan, setShowStackingPlan] = useState(false);
   const [activeTab, setActiveTab] = useState('vehicles');
+  const [selectedStrategy, setSelectedStrategy] = useState('balanced');
 
   // Generate vehicle recommendations
   const recommendations = useMemo(() => {
     if (!orders || orders.length === 0 || !vehicleTypes || vehicleTypes.length === 0) {
       return [];
     }
-    return getVehicleRecommendations(orders, vehicleTypes);
+    return getVehicleRecommendations(orders, vehicleTypes, { strategy: selectedStrategy });
   }, [orders, vehicleTypes]);
 
   // Generate stacking plan for selected vehicle
@@ -464,13 +465,31 @@ const AIRecommendationsPanel = ({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-          <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
-          AI Recommendations
-        </h3>
-        <p className="text-sm text-gray-500 mt-1">
-          Smart suggestions based on cargo fragility and requirements
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+              AI Recommendations
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Smart suggestions based on cargo fragility and requirements
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 font-medium">Strategy:</span>
+            <select
+              value={selectedStrategy}
+              onChange={(e) => setSelectedStrategy(e.target.value)}
+              className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1 pl-2 pr-8"
+            >
+              <option value="balanced">Balanced Strategy</option>
+              <option value="cost">Cost Optimization</option>
+              <option value="fragility">Fragility Focus</option>
+              <option value="weight">Max Weight Util.</option>
+              <option value="volume">Max Volume Util.</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

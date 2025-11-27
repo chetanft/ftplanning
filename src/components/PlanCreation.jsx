@@ -1,5 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Truck, Package, MapPin, Weight, BarChart3, Plus, Minus, AlertTriangle, CheckCircle, Lightbulb, Navigation, ArrowRight } from 'lucide-react';
+import {
+  ArrowLeft, Upload, FileText, Settings, Plus, Minus, AlertTriangle,
+  CheckCircle2, Truck, Info, X, ChevronDown, ChevronUp, Search, Filter,
+  MoreVertical, Calendar, Package, BarChart3, RotateCcw, Split, MapPin, Lightbulb, Navigation
+} from 'lucide-react';
 import { vehicleTypes, routes } from '../data/mockData';
 import { generateVehicleSuggestions, calculateUtilization, calculateOrderTotals, groupOrdersByRoute, generateDropPoints, suggestRouteType } from '../utils/vehicleOptimization';
 import { getRouteDistance, calculateMultiCityRouteDistance } from '../services/routeDistanceService';
@@ -12,8 +16,10 @@ import { Switch } from "@/components/ui/switch"; // Assuming Switch exists or wi
 import { Label } from "@/components/ui/label";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "@/components/ui/drawer";
 import { scoreUnplannedOrders } from '../utils/orderRecommendation';
+import LiveMetricsPanel from './LiveMetricsPanel';
+import { calculateLoadRiskScore } from '../utils/fragilityScoring';
 
-const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constraints, availableOrders = [], onAddOrder, onRemoveOrder }) => {
+const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constraints, availableOrders = [], onAddOrder, onRemoveOrder, onSplitOrder }) => {
   // Debug: Log props on mount/update
   React.useEffect(() => {
     console.log('PlanCreation props:', {
@@ -168,6 +174,40 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
     return candidates.slice(0, 3);
   }, [availableOrders, currentUtilization, selectedVehicles, vehicleTypes]);
 
+  // Calculate live metrics
+  const liveMetrics = useMemo(() => {
+    const totalCost = selectedVehicles.reduce((total, sv) => {
+      const vehicle = vehicleTypes.find(v => v.id === sv.type);
+      const routeIds = [...new Set(selectedOrders.map(o => o.route))];
+      const totalDistance = routeIds.reduce((sum, routeId) => {
+        const dist = getRouteDistance(routeId);
+        return sum + (dist || 1000);
+      }, 0);
+      const avgDistancePerRoute = routeIds.length > 0 ? totalDistance / routeIds.length : 1000;
+      return total + (vehicle?.costPerKm * sv.quantity * avgDistancePerRoute || 0);
+    }, 0);
+
+    const vehicleCount = selectedVehicles.reduce((total, v) => total + v.quantity, 0);
+
+    // Calculate fragility risk
+    const riskAssessment = calculateLoadRiskScore(selectedOrders.map(o => ({
+      ...o,
+      analysis: {
+        fragility: { score: o.fragilityScore || 1 },
+        totalWeight: o.weight * (o.quantity || 1)
+      }
+    })));
+
+    return {
+      totalCost,
+      totalWeight: totals.totalWeight,
+      vehicleCount,
+      weightUtilization: currentUtilization?.weight || 0,
+      volumeUtilization: currentUtilization?.volume || 0,
+      fragilityRisk: riskAssessment.score
+    };
+  }, [selectedVehicles, selectedOrders, totals, currentUtilization]);
+
   const handleGeneratePlan = () => {
     // Validate and generate plan
     if (selectedVehicles.length === 0) {
@@ -270,6 +310,9 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
         </div>
       </div>
 
+      {/* Live Metrics Panel */}
+      <LiveMetricsPanel metrics={liveMetrics} />
+
       {/* Manual Plan Editor Modal */}
       <PlanEditModal
         isOpen={isEditModalOpen}
@@ -340,8 +383,8 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                       {/* Orders in this route */}
                       <div className="space-y-2">
                         {orders.map(order => (
-                          <div 
-                            key={order.id} 
+                          <div
+                            key={order.id}
                             className="flex items-center justify-between text-sm"
                             onClick={(e) => {
                               // Prevent row clicks from interfering
@@ -356,7 +399,7 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                             <div className="flex items-center space-x-4" onClick={(e) => e.stopPropagation()}>
                               <span className="text-gray-500">{order.quantity} units</span>
                               <span className="text-gray-500">{order.weight * order.quantity} kg</span>
-                              <div 
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
@@ -371,14 +414,14 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
                                     e.preventDefault();
                                     e.stopPropagation();
                                     e.nativeEvent?.stopImmediatePropagation();
-                                    
+
                                     console.log('=== MINUS BUTTON CLICKED ===');
                                     console.log('Order ID to remove:', order.id);
                                     console.log('Order object:', order);
                                     console.log('onRemoveOrder type:', typeof onRemoveOrder);
                                     console.log('onRemoveOrder function:', onRemoveOrder);
                                     console.log('Current selectedOrders count:', selectedOrders.length);
-                                    
+
                                     if (onRemoveOrder && typeof onRemoveOrder === 'function') {
                                       console.log('✅ Calling onRemoveOrder with orderId:', order.id);
                                       onRemoveOrder(order.id);
@@ -735,11 +778,35 @@ const PlanCreation = ({ selectedOrders, materialTypes, onGeneratePlan, constrain
 
               {(currentUtilization.weight > 100 || currentUtilization.volume > 100) && (
                 <Card className="mt-4 border-destructive/50 bg-destructive/10">
-                  <CardContent className="p-3 flex items-center">
-                    <AlertTriangle className="h-5 w-5 text-destructive mr-2" />
-                    <span className="text-sm text-destructive">
-                      Warning: Capacity exceeded. Consider adding more vehicles or using auto-suggestions.
-                    </span>
+                  <CardContent className="p-3">
+                    <div className="flex items-center mb-2">
+                      <AlertTriangle className="h-5 w-5 text-destructive mr-2" />
+                      <span className="text-sm font-medium text-destructive">
+                        Warning: Capacity exceeded.
+                      </span>
+                    </div>
+                    <div className="text-sm text-destructive mb-3">
+                      Current load exceeds vehicle limits. Consider adding more vehicles or splitting orders.
+                    </div>
+                    {onSplitOrder && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          // Find the first order that is causing the issue (heuristic)
+                          // In a real scenario, we'd know exactly which order pushed it over.
+                          // For now, let's pick the largest order in the selection.
+                          if (selectedOrders.length > 0) {
+                            const largestOrder = [...selectedOrders].sort((a, b) => (b.weight * b.quantity) - (a.weight * a.quantity))[0];
+                            onSplitOrder(largestOrder.id);
+                          }
+                        }}
+                      >
+                        <Split className="h-4 w-4 mr-2" />
+                        Split Largest Order
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               )}
